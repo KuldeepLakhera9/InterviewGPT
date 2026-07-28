@@ -61,11 +61,11 @@ To achieve sub-1.2s LCP and instant page transitions, InterviewGPT strictly sepa
 
 InterviewGPT uses a strict 3-tier state model to avoid unnecessary re-renders during high-frequency audio turn-taking:
 
-| State Tier | Technology | Use Case | Lifecycle Scope |
-| :--- | :--- | :--- | :--- |
-| **Server Cache State** | TanStack Query v5 | User profile, historical scorecards, list of resumes, roadmap node statuses. | Persisted & invalidated via mutation keys. |
-| **Transient Session State** | Zustand | Active WebSocket connection status, current interview question index, audio volume metrics, live captions. | Active interview session only (cleared on exit). |
-| **URL Search Param State** | `nuqs` | Filter states (e.g. `?track=technical&status=completed`), pagination, drawer open states. | Shareable & bookmarkable. |
+| State Tier                  | Technology        | Use Case                                                                                                   | Lifecycle Scope                                  |
+| :-------------------------- | :---------------- | :--------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
+| **Server Cache State**      | TanStack Query v5 | User profile, historical scorecards, list of resumes, roadmap node statuses.                               | Persisted & invalidated via mutation keys.       |
+| **Transient Session State** | Zustand           | Active WebSocket connection status, current interview question index, audio volume metrics, live captions. | Active interview session only (cleared on exit). |
+| **URL Search Param State**  | `nuqs`            | Filter states (e.g. `?track=technical&status=completed`), pagination, drawer open states.                  | Shareable & bookmarkable.                        |
 
 ---
 
@@ -79,12 +79,13 @@ flowchart LR
     AudioContext --> Worklet[AudioWorklet Processor Node]
     Worklet --> VAD[Voice Activity Detection Node]
     Worklet --> PCMBuffer[Ring Buffer PCM Chunks]
-    
+
     VAD -- Silence >1.2s --> SignalTurn[Emit 'turn_complete']
     PCMBuffer -- 100ms Chunks --> WS[WebSocket Gateway]
 ```
 
 ### Custom Hook API Contract (`useAudioStream.ts`)
+
 ```typescript
 interface UseAudioStreamOptions {
   sessionId: string;
@@ -112,14 +113,14 @@ InterviewGPT features a Raycast/Linear-grade Command Menu powered by `cmdk`. It 
 
 ### Keybinding Registry Matrix
 
-| Key Combo | Action | Scope |
-| :--- | :--- | :--- |
-| `⌘ + K` | Toggle Global Command Palette Overlay | Global |
-| `⌘ + I` | Start New Quick Mock Interview | Global |
-| `⌘ + R` | View Current Career Roadmap | Global |
-| `⌘ + Enter` | Execute Monaco Code Sandbox | Live Interview (Code Mode) |
-| `Space` *(Hold)* | Push-to-Talk Override | Live Interview (Audio Mode) |
-| `Esc` | Mute Mic / Close Overlay | Live Interview / Overlays |
+| Key Combo        | Action                                | Scope                       |
+| :--------------- | :------------------------------------ | :-------------------------- |
+| `⌘ + K`          | Toggle Global Command Palette Overlay | Global                      |
+| `⌘ + I`          | Start New Quick Mock Interview        | Global                      |
+| `⌘ + R`          | View Current Career Roadmap           | Global                      |
+| `⌘ + Enter`      | Execute Monaco Code Sandbox           | Live Interview (Code Mode)  |
+| `Space` _(Hold)_ | Push-to-Talk Override                 | Live Interview (Audio Mode) |
+| `Esc`            | Mute Mic / Close Overlay              | Live Interview / Overlays   |
 
 ---
 

@@ -9,9 +9,11 @@
 ## 1. Vision & Strategic North Star
 
 ### 1.1 Core Mission Statement
+
 To democratize access to elite-level interview coaching, providing every candidate with an instant, hyper-realistic, objective, and actionable interview feedback loop that accelerates career growth.
 
 ### 1.2 Strategic North Star Metric
+
 **Actionable Confidence Score (ACS)**: A composite metric measuring candidate interview performance progression over time, combined with user-reported interview success rate within 60 days of platform usage.
 
 ---
@@ -19,7 +21,9 @@ To democratize access to elite-level interview coaching, providing every candida
 ## 2. Product Philosophy & Core Principles
 
 ### 2.1 The "Linear/Vercel" Standard for SaaS
+
 InterviewGPT is built with the software craft philosophy of industry leaders like **Linear**, **Vercel**, **Stripe**, **Notion**, and **Raycast**:
+
 - **Speed as a Feature**: Sub-second system feedback, low-latency voice streaming, instant analytics rendering.
 - **High-Density, High-Clarity UI**: Minimalist typography, dark-mode default, low cognitive load, keyboard-first navigation.
 - **Zero Friction**: No forced tutorials, no fluff. Jump straight from upload to interview in 3 clicks.
@@ -27,13 +31,13 @@ InterviewGPT is built with the software craft philosophy of industry leaders lik
 
 ### 2.2 Design & Product Anti-Patterns (Strictly Prohibited)
 
-| Anti-Pattern | Why We Avoid It | InterviewGPT Standard |
-| :--- | :--- | :--- |
-| **Excessive AI Gradients & Sparkles** | Feels cheap, generic, and unpolished. | Subtly textured monochrome UI with precise status indicators. |
-| **Generic Chatbot UI** | Chat widgets don't reflect realistic interview environments. | Structured dual-pane interview IDE & audio workspace. |
-| **Vague High-Level Scores** | "You scored 8/10" provides zero tactical value. | Granular rubrics: "System Architecture Depth", "Pacing", "Pillar Alignment". |
-| **Artificial Delay / Fake Thinking** | Wastes candidate time for artificial novelty. | Parallel streaming responses; display insights as fast as computed. |
-| **Static One-Size-Fits-All Questions** | Leads to rote memorization rather than skill building. | Adaptive RAG question engine tuned to uploaded resume & targeted Job Description. |
+| Anti-Pattern                           | Why We Avoid It                                              | InterviewGPT Standard                                                             |
+| :------------------------------------- | :----------------------------------------------------------- | :-------------------------------------------------------------------------------- |
+| **Excessive AI Gradients & Sparkles**  | Feels cheap, generic, and unpolished.                        | Subtly textured monochrome UI with precise status indicators.                     |
+| **Generic Chatbot UI**                 | Chat widgets don't reflect realistic interview environments. | Structured dual-pane interview IDE & audio workspace.                             |
+| **Vague High-Level Scores**            | "You scored 8/10" provides zero tactical value.              | Granular rubrics: "System Architecture Depth", "Pacing", "Pillar Alignment".      |
+| **Artificial Delay / Fake Thinking**   | Wastes candidate time for artificial novelty.                | Parallel streaming responses; display insights as fast as computed.               |
+| **Static One-Size-Fits-All Questions** | Leads to rote memorization rather than skill building.       | Adaptive RAG question engine tuned to uploaded resume & targeted Job Description. |
 
 ---
 
@@ -60,6 +64,7 @@ InterviewGPT is built with the software craft philosophy of industry leaders lik
 ```
 
 ### 3.2 Key Competitive Moats
+
 1. **Resume-to-Question Context Engine**: Deep vector graph indexing of candidate experience mapped against real-world tech stack expectations.
 2. **Sub-Second Voice Turn-Taking**: Ultra-low-latency voice pipeline (STT -> LLM -> TTS) mirroring human conversation cadence (<800ms total loop).
 3. **Multi-Dimensional Communication Telemetry**: Real-time evaluation of filler words, speaking pace (WPM), pause density, and technical keyword density.
@@ -78,16 +83,19 @@ InterviewGPT is built with the software craft philosophy of industry leaders lik
 ## 5. Success Metrics & Key Performance Indicators (KPIs)
 
 ### 5.1 Product Engagement KPIs
+
 - **Interview Completion Rate**: ≥ 85% of started mock sessions completed to scorecard generation.
 - **Weekly Active Session Ratio (WASR)**: ≥ 3.2 completed interview sessions per active user per week.
 - **Roadmap Completion Rate**: ≥ 60% of suggested skill gap practice modules completed.
 
 ### 5.2 Technical & Operational KPIs
+
 - **Voice Stream Latency**: P95 end-to-end voice latency < 800ms.
 - **Audio Transcript Accuracy (WER)**: Word Error Rate < 5% on technical domain terms.
 - **System Availability (SLA)**: 99.9% operational uptime.
 
 ### 5.3 Business KPIs
+
 - **Free-to-Paid Conversion**: ≥ 6.5% within 14 days of sign-up.
 - **30-Day Retention**: ≥ 45% active user retention.
 - **Net Promoter Score (NPS)**: ≥ +55 across post-session candidate prompts.

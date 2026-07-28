@@ -13,23 +13,23 @@ erDiagram
     WORKSPACES ||--|{ USERS : "belongs to"
     WORKSPACES ||--|{ RESUMES : "owns"
     WORKSPACES ||--|{ INTERVIEW_SESSIONS : "hosts"
-    
+
     USERS ||--|{ RESUMES : "uploads"
     USERS ||--|{ INTERVIEW_SESSIONS : "conducts"
     USERS ||--|| ROADMAPS : "owns"
 
     RESUMES ||--|{ RESUME_ANALYSES : "generates"
-    
+
     JOB_DESCRIPTIONS ||--|{ INTERVIEW_SESSIONS : "targets"
 
     INTERVIEW_SESSIONS ||--|{ INTERVIEW_QUESTIONS : "contains"
     INTERVIEW_SESSIONS ||--|| SCORECARDS : "produces"
-    
+
     INTERVIEW_QUESTIONS ||--|{ TRANSCRIPTS : "has"
     INTERVIEW_QUESTIONS ||--|{ CODE_SUBMISSIONS : "evaluates"
 
     SCORECARDS ||--|{ SCORECARD_PILLARS : "itemizes"
-    
+
     ROADMAPS ||--|{ ROADMAP_NODES : "comprises"
 ```
 
@@ -40,7 +40,9 @@ erDiagram
 ### 2.1 Core Workspace & Identity
 
 #### `workspaces`
+
 Stores workspace tenant boundaries.
+
 - `id` (UUID, Primary Key, DEFAULT `gen_random_uuid()`)
 - `name` (VARCHAR(255), NOT NULL)
 - `slug` (VARCHAR(100), UNIQUE, NOT NULL)
@@ -49,7 +51,9 @@ Stores workspace tenant boundaries.
 - `updated_at` (TIMESTAMPTZ, NOT NULL, DEFAULT `NOW()`)
 
 #### `users`
+
 Stores user identity profile.
+
 - `id` (UUID, Primary Key) -- References Auth Provider ID (Clerk/NextAuth)
 - `workspace_id` (UUID, Foreign Key -> `workspaces.id`, NOT NULL)
 - `email` (VARCHAR(255), UNIQUE, NOT NULL)
@@ -63,7 +67,9 @@ Stores user identity profile.
 ### 2.2 Resume & JD Vector Storage
 
 #### `resumes`
+
 Stores candidate uploaded resume raw metadata and parsed content.
+
 - `id` (UUID, Primary Key, DEFAULT `gen_random_uuid()`)
 - `workspace_id` (UUID, Foreign Key -> `workspaces.id`, NOT NULL)
 - `user_id` (UUID, Foreign Key -> `users.id`, NOT NULL)
@@ -76,7 +82,9 @@ Stores candidate uploaded resume raw metadata and parsed content.
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT `NOW()`)
 
 #### `job_descriptions`
+
 Target job postings for match calculations.
+
 - `id` (UUID, Primary Key, DEFAULT `gen_random_uuid()`)
 - `workspace_id` (UUID, Foreign Key -> `workspaces.id`, NOT NULL)
 - `company_name` (VARCHAR(255), NOT NULL)
@@ -91,7 +99,9 @@ Target job postings for match calculations.
 ### 2.3 Interview Sessions & Transcripts
 
 #### `interview_sessions`
+
 Core entity representing an active or completed mock interview.
+
 - `id` (UUID, Primary Key, DEFAULT `gen_random_uuid()`)
 - `workspace_id` (UUID, Foreign Key -> `workspaces.id`, NOT NULL)
 - `user_id` (UUID, Foreign Key -> `users.id`, NOT NULL)
@@ -107,7 +117,9 @@ Core entity representing an active or completed mock interview.
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT `NOW()`)
 
 #### `interview_questions`
+
 Individual questions asked within a session.
+
 - `id` (UUID, Primary Key, DEFAULT `gen_random_uuid()`)
 - `session_id` (UUID, Foreign Key -> `interview_sessions.id`, NOT NULL)
 - `sequence_order` (INTEGER, NOT NULL)
@@ -118,7 +130,9 @@ Individual questions asked within a session.
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT `NOW()`)
 
 #### `transcripts`
+
 Voice/text turns between candidate and AI interviewer.
+
 - `id` (UUID, Primary Key, DEFAULT `gen_random_uuid()`)
 - `question_id` (UUID, Foreign Key -> `interview_questions.id`, NOT NULL)
 - `speaker` (VARCHAR(20), NOT NULL) -- `'interviewer'`, `'candidate'`
@@ -132,7 +146,9 @@ Voice/text turns between candidate and AI interviewer.
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT `NOW()`)
 
 #### `code_submissions`
+
 Monaco sandbox execution attempts.
+
 - `id` (UUID, Primary Key, DEFAULT `gen_random_uuid()`)
 - `question_id` (UUID, Foreign Key -> `interview_questions.id`, NOT NULL)
 - `language` (VARCHAR(50), NOT NULL) -- `'typescript'`, `'python'`, `'go'`, `'java'`
@@ -148,7 +164,9 @@ Monaco sandbox execution attempts.
 ### 2.4 Scorecards & Roadmaps
 
 #### `scorecards`
+
 Aggregated post-session candidate evaluations.
+
 - `id` (UUID, Primary Key, DEFAULT `gen_random_uuid()`)
 - `session_id` (UUID, Foreign Key -> `interview_sessions.id`, UNIQUE, NOT NULL)
 - `overall_score` (NUMERIC(4, 1), NOT NULL) -- e.g. 84.5 (out of 100)
@@ -162,7 +180,9 @@ Aggregated post-session candidate evaluations.
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT `NOW()`)
 
 #### `roadmaps` & `roadmap_nodes`
+
 Personalized career skill trees.
+
 - `roadmaps`: `id`, `user_id`, `created_at`, `updated_at`
 - `roadmap_nodes`: `id`, `roadmap_id`, `title`, `description`, `category`, `status` (`'todo'`, `'in_progress'`, `'mastered'`), `priority` (`'high'`, `'medium'`, `'low'`), `source_scorecard_id`
 
@@ -171,6 +191,7 @@ Personalized career skill trees.
 ## 3. Vector Storage & Search Strategy
 
 ### 3.1 `pgvector` HNSW Index Specification
+
 Hierarchical Navigable Small World (HNSW) indices are created on embedding columns to ensure sub-50ms similarity searches across 1,000,000+ question bank & resume records.
 
 ```sql
@@ -178,14 +199,14 @@ Hierarchical Navigable Small World (HNSW) indices are created on embedding colum
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Create HNSW index for resume embeddings using cosine distance
-CREATE INDEX idx_resumes_embedding_hnsw 
-ON resumes 
+CREATE INDEX idx_resumes_embedding_hnsw
+ON resumes
 USING hnsw (embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 
 -- Create HNSW index for job description embeddings
-CREATE INDEX idx_job_descriptions_embedding_hnsw 
-ON job_descriptions 
+CREATE INDEX idx_job_descriptions_embedding_hnsw
+ON job_descriptions
 USING hnsw (embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 ```
@@ -194,12 +215,12 @@ WITH (m = 16, ef_construction = 64);
 
 ## 4. Indexing & Optimization Strategy
 
-| Table | Index Name | Type | Columns Indexed | Purpose |
-| :--- | :--- | :--- | :--- | :--- |
-| `users` | `idx_users_workspace` | B-Tree | `workspace_id`, `email` | Fast user lookup within workspace. |
-| `interview_sessions` | `idx_sessions_user_status` | B-Tree | `user_id`, `status`, `created_at DESC` | Instant user dashboard session history. |
-| `transcripts` | `idx_transcripts_question` | B-Tree | `question_id`, `sequence_order ASC` | Replaying transcripts in sequential order. |
-| `resumes` | `idx_resumes_parsed_gin` | GIN | `parsed_profile jsonb_path_ops` | Fast JSON query filtering on candidate skills. |
+| Table                | Index Name                 | Type   | Columns Indexed                        | Purpose                                        |
+| :------------------- | :------------------------- | :----- | :------------------------------------- | :--------------------------------------------- |
+| `users`              | `idx_users_workspace`      | B-Tree | `workspace_id`, `email`                | Fast user lookup within workspace.             |
+| `interview_sessions` | `idx_sessions_user_status` | B-Tree | `user_id`, `status`, `created_at DESC` | Instant user dashboard session history.        |
+| `transcripts`        | `idx_transcripts_question` | B-Tree | `question_id`, `sequence_order ASC`    | Replaying transcripts in sequential order.     |
+| `resumes`            | `idx_resumes_parsed_gin`   | GIN    | `parsed_profile jsonb_path_ops`        | Fast JSON query filtering on candidate skills. |
 
 ---
 

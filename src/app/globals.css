@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+
+:root {
+  /* Neutral Backgrounds & Surfaces */
+  --bg-app: HSL(240, 6%, 6%);
+  --bg-surface-1: HSL(240, 5%, 9%);
+  --bg-surface-2: HSL(240, 5%, 13%);
+  --bg-surface-hover: HSL(240, 5%, 16%);
+
+  /* Borders & Dividers */
+  --border-subtle: HSL(240, 4%, 16%);
+  --border-strong: HSL(240, 4%, 25%);
+
+  /* Typography Colors */
+  --text-primary: HSL(0, 0%, 98%);
+  --text-secondary: HSL(240, 4%, 65%);
+  --text-tertiary: HSL(240, 4%, 45%);
+
+  /* Functional Status Accents */
+  --accent-primary: HSL(212, 100%, 55%);
+  --status-success: HSL(142, 71%, 45%);
+  --status-warning: HSL(38, 92%, 50%);
+  --status-danger: HSL(0, 84%, 60%);
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(
+    --font-sans,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
+  min-height: 100vh;
+  margin: 0;
+}

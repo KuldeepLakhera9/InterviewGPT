@@ -3,6 +3,7 @@
 ## Executive Summary
 
 InterviewGPT exposes a hybrid API surface:
+
 1. **REST API (v1)** for resource management (Auth, Workspaces, Resumes, Scorecards, Roadmaps).
 2. **WebSocket & SSE Streams** for sub-second, real-time voice, live audio telemetry, and AI interviewer turn-taking.
 
@@ -11,6 +12,7 @@ InterviewGPT exposes a hybrid API surface:
 ## 1. Authentication & Security Headers
 
 ### 1.1 Bearer JWT Scheme
+
 All REST API requests require a valid Bearer token in the `Authorization` header:
 
 ```http
@@ -19,6 +21,7 @@ X-Workspace-Id: 9f82d1c4-2a6b-4c7e-9d10-8e5f2a1b3c4d
 ```
 
 ### 1.2 Standard Error Schema (RFC 7807 Problem Details)
+
 All API errors return a standard JSON payload:
 
 ```json
@@ -40,14 +43,16 @@ All API errors return a standard JSON payload:
 ### 2.1 Resumes & Job Intelligence
 
 #### `POST /api/v1/resumes/upload`
+
 Uploads resume file and triggers asynchronous background parsing.
 
 - **Content-Type**: `multipart/form-data`
 - **Request Body**:
   - `file`: PDF or DOCX file payload (max 10MB).
-  - `target_role` *(optional)*: String (e.g. `"Senior Full Stack Engineer"`).
+  - `target_role` _(optional)_: String (e.g. `"Senior Full Stack Engineer"`).
 
 - **Response (202 Accepted)**:
+
 ```json
 {
   "id": "e3a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c",
@@ -59,9 +64,11 @@ Uploads resume file and triggers asynchronous background parsing.
 ```
 
 #### `GET /api/v1/resumes/{id}`
+
 Fetches parsed resume profile and competency matrix.
 
 - **Response (200 OK)**:
+
 ```json
 {
   "id": "e3a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c",
@@ -87,9 +94,11 @@ Fetches parsed resume profile and competency matrix.
 ### 2.2 Interview Session Management
 
 #### `POST /api/v1/sessions`
+
 Initializes a new mock interview session.
 
 - **Request Body**:
+
 ```json
 {
   "track": "technical",
@@ -102,6 +111,7 @@ Initializes a new mock interview session.
 ```
 
 - **Response (201 Created)**:
+
 ```json
 {
   "session_id": "7f8e9d0c-1b2a-3f4e-5d6c-7b8a9e0f1a2b",
@@ -117,9 +127,11 @@ Initializes a new mock interview session.
 ### 2.3 Code Execution Engine
 
 #### `POST /api/v1/code/execute`
+
 Executes candidate code in an isolated sandbox.
 
 - **Request Body**:
+
 ```json
 {
   "session_id": "7f8e9d0c-1b2a-3f4e-5d6c-7b8a9e0f1a2b",
@@ -130,6 +142,7 @@ Executes candidate code in an isolated sandbox.
 ```
 
 - **Response (200 OK)**:
+
 ```json
 {
   "execution_id": "exec_9900112233",
@@ -147,9 +160,11 @@ Executes candidate code in an isolated sandbox.
 ### 2.4 Scorecard & Evaluation
 
 #### `GET /api/v1/scorecards/{session_id}`
+
 Retrieves complete evaluation scorecard for a completed session.
 
 - **Response (200 OK)**:
+
 ```json
 {
   "scorecard_id": "sc_445566778899",
@@ -183,15 +198,19 @@ Retrieves complete evaluation scorecard for a completed session.
 ## 3. Real-time WebSocket Protocol Specification
 
 ### 3.1 Connection Handshake
+
 - **URI**: `wss://stream.interviewgpt.com/v1/session/{session_id}?ticket={auth_ticket}`
 
 ### 3.2 Client-to-Server Event Payloads
 
 #### `audio_chunk` (Binary Stream)
+
 PCM 16-bit 16kHz mono audio buffer chunks sent every 100ms.
 
 #### `turn_complete` (JSON Frame)
+
 Sent when client VAD detects microphone silence >1.2 seconds.
+
 ```json
 {
   "event": "turn_complete",
@@ -202,10 +221,13 @@ Sent when client VAD detects microphone silence >1.2 seconds.
 ### 3.3 Server-to-Client Event Payloads
 
 #### `interviewer_audio_stream` (Binary Stream)
+
 Audio chunk output stream from TTS engine.
 
 #### `live_caption` (JSON Frame)
+
 Interim and final speech-to-text transcriptions.
+
 ```json
 {
   "event": "live_caption",
@@ -217,6 +239,7 @@ Interim and final speech-to-text transcriptions.
 ```
 
 #### `session_state_update` (JSON Frame)
+
 ```json
 {
   "event": "session_state_update",
@@ -230,9 +253,9 @@ Interim and final speech-to-text transcriptions.
 
 ## 4. Rate Limiting Strategy
 
-| Endpoint Category | Limit | Enforcement Window | Action on Breach |
-| :--- | :--- | :--- | :--- |
-| **Auth & Workspace** | 20 req/min | Sliding Window | 429 Too Many Requests |
-| **Resume Upload** | 5 files/hour | Fixed Window | 429 + Error message |
-| **Session Start** | 10 start/day (Free) | Fixed Window | Prompt Upgrade to Pro |
-| **Code Execution** | 30 runs/min | Sliding Window | 429 + Delay execution |
+| Endpoint Category    | Limit               | Enforcement Window | Action on Breach      |
+| :------------------- | :------------------ | :----------------- | :-------------------- |
+| **Auth & Workspace** | 20 req/min          | Sliding Window     | 429 Too Many Requests |
+| **Resume Upload**    | 5 files/hour        | Fixed Window       | 429 + Error message   |
+| **Session Start**    | 10 start/day (Free) | Fixed Window       | Prompt Upgrade to Pro |
+| **Code Execution**   | 30 runs/min         | Sliding Window     | 429 + Delay execution |
