@@ -120,6 +120,7 @@ model Resume {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   parsedResume ParsedResume?
+  atsAnalysis AtsAnalysis?
 
   @@index([userId, isActive])
   @@index([workspaceId])
@@ -140,4 +141,22 @@ model ParsedResume {
   resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@map("parsed_resumes")
+}
+
+model AtsAnalysis {
+  id                 String   @id @default(uuid())
+  resumeId           String   @unique @map("resume_id")
+  atsScore           Int      @map("ats_score")
+  recruiterScore     Int      @map("recruiter_score")
+  missingKeywords    Json     @map("missing_keywords")
+  weakSections       Json     @map("weak_sections")
+  strengths          Json     @map("strengths")
+  suggestions        Json     @map("suggestions")
+  formattingFeedback Json     @map("formatting_feedback")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@map("ats_analyses")
 }

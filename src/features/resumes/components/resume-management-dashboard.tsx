@@ -1,7 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCircle2, Code2, Download, Eye, FileText, Folder, Plus } from 'lucide-react';
+import {
+  CheckCircle2,
+  Code2,
+  Download,
+  Eye,
+  FileCheck,
+  FileText,
+  Folder,
+  Plus,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 
-import type { ParsedResumeRecord, ResumeItem } from '../types/resume.types';
+import type { AtsAnalysisRecord, ParsedResumeRecord, ResumeItem } from '../types/resume.types';
 import {
   deleteResumeAction,
   getParsedResumeAction,
@@ -25,6 +34,7 @@ import {
   setActiveResumeVersionAction,
   uploadResumeAction,
 } from '../actions/resume.actions';
+import { analyzeResumeAtsAction, getAtsAnalysisAction } from '../ats/actions/ats.actions';
 import { ResumeDropzone } from './resume-dropzone';
 import { ResumePreviewDialog } from './resume-preview-dialog';
 import { ParsedResumeView } from './parsed-resume-view';
@@ -33,6 +43,7 @@ import { ResumeVersionSelector } from './resume-version-selector';
 import { ResumeAnalyticsWidget } from './resume-analytics-widget';
 import { ResumeEmptyState } from './resume-empty-state';
 import { ResumeDashboardSkeleton } from './resume-dashboard-skeleton';
+import { AtsAnalysisDashboard } from './ats-analysis-dashboard';
 
 interface ResumeManagementDashboardProps {
   initialResumes: ResumeItem[];
@@ -42,7 +53,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   const { toast } = useToast();
   const [resumes, setResumes] = React.useState<ResumeItem[]>(initialResumes || []);
   const [isUploading, setIsUploading] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<'files' | 'parsed'>('files');
+  const [activeTab, setActiveTab] = React.useState<'files' | 'parsed' | 'ats'>('files');
   const [isInitialLoading, setIsInitialLoading] = React.useState(false);
 
   // Upload Dialog Modal Trigger
@@ -51,6 +62,10 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   // Parsed Data state
   const [parsedResume, setParsedResume] = React.useState<ParsedResumeRecord | null>(null);
   const [isLoadingParsed, setIsLoadingParsed] = React.useState(false);
+
+  // ATS Analysis state
+  const [atsAnalysis, setAtsAnalysis] = React.useState<AtsAnalysisRecord | null>(null);
+  const [isLoadingAts, setIsLoadingAts] = React.useState(false);
 
   // Preview State
   const [previewResume, setPreviewResume] = React.useState<ResumeItem | null>(null);
@@ -67,30 +82,44 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     return resumes.find((r) => r.isActive) || (resumes.length > 0 ? resumes[0] : null);
   }, [resumes]);
 
-  // Fetch parsed resume record whenever active resume changes
-  const fetchParsedData = React.useCallback(async (resumeId: string) => {
+  // Fetch parsed resume & ATS records whenever active resume changes
+  const fetchResumeMetadata = React.useCallback(async (resumeId: string) => {
     setIsLoadingParsed(true);
+    setIsLoadingAts(true);
     try {
-      const res = await getParsedResumeAction(resumeId);
-      if (res.success && res.parsedResume) {
-        setParsedResume(res.parsedResume);
+      const [parsedRes, atsRes] = await Promise.all([
+        getParsedResumeAction(resumeId),
+        getAtsAnalysisAction(resumeId),
+      ]);
+
+      if (parsedRes.success && parsedRes.parsedResume) {
+        setParsedResume(parsedRes.parsedResume);
       } else {
         setParsedResume(null);
       }
+
+      if (atsRes.success && atsRes.atsAnalysis) {
+        setAtsAnalysis(atsRes.atsAnalysis);
+      } else {
+        setAtsAnalysis(null);
+      }
     } catch {
       setParsedResume(null);
+      setAtsAnalysis(null);
     } finally {
       setIsLoadingParsed(false);
+      setIsLoadingAts(false);
     }
   }, []);
 
   React.useEffect(() => {
     if (activeResume) {
-      fetchParsedData(activeResume.id);
+      fetchResumeMetadata(activeResume.id);
     } else {
       setParsedResume(null);
+      setAtsAnalysis(null);
     }
-  }, [activeResume, fetchParsedData]);
+  }, [activeResume, fetchResumeMetadata]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -114,7 +143,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           description: res.message || `Uploaded "${file.name}" as active version.`,
         });
         if (res.resume) {
-          fetchParsedData(res.resume.id);
+          fetchResumeMetadata(res.resume.id);
         }
       } else {
         toast({
@@ -153,7 +182,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           description: res.message || 'Updated to new version.',
         });
         if (res.resume) {
-          fetchParsedData(res.resume.id);
+          fetchResumeMetadata(res.resume.id);
         }
       } else {
         toast({
@@ -184,7 +213,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           title: 'Active Version Changed',
           description: 'Target resume is now set as active for mock interviews.',
         });
-        await fetchParsedData(resumeId);
+        await fetchResumeMetadata(resumeId);
       } else {
         toast({
           variant: 'danger',
@@ -258,6 +287,34 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     }
   };
 
+  // Run ATS Analysis handler
+  const handleRunAtsAnalysis = async () => {
+    if (!activeResume) return;
+
+    try {
+      const res = await analyzeResumeAtsAction(activeResume.id);
+      if (res.success && res.atsAnalysis) {
+        setAtsAnalysis(res.atsAnalysis);
+        toast({
+          title: 'ATS Analysis Complete',
+          description: 'Evaluated ATS readability score and recruiter metrics.',
+        });
+      } else {
+        toast({
+          variant: 'danger',
+          title: 'ATS Evaluation Error',
+          description: res.error || 'Failed to analyze resume.',
+        });
+      }
+    } catch {
+      toast({
+        variant: 'danger',
+        title: 'Error',
+        description: 'Failed to execute ATS evaluation pipeline.',
+      });
+    }
+  };
+
   if (isInitialLoading) {
     return <ResumeDashboardSkeleton />;
   }
@@ -271,8 +328,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
             Resume Dashboard
           </h1>
           <p className="text-xs text-[var(--text-secondary)]">
-            Manage resume versions, inspect parsed JSON fields, and monitor interview readiness
-            analytics.
+            Manage resume versions, inspect parsed JSON fields, and monitor ATS readiness analytics.
           </p>
         </div>
 
@@ -370,21 +426,25 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           {/* Main Content Tabs */}
           <Tabs
             value={activeTab}
-            onValueChange={(val) => setActiveTab(val as 'files' | 'parsed')}
+            onValueChange={(val) => setActiveTab(val as 'files' | 'parsed' | 'ats')}
             className="w-full space-y-6"
           >
-            <TabsList className="grid w-full max-w-md grid-cols-2 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
+            <TabsList className="grid w-full max-w-xl grid-cols-3 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
               <TabsTrigger value="files" className="space-x-2 text-xs font-semibold">
                 <Folder className="h-3.5 w-3.5 text-blue-400" />
-                <span>Resume Cards & History ({resumes.length})</span>
+                <span>Resume Files ({resumes.length})</span>
               </TabsTrigger>
               <TabsTrigger value="parsed" className="space-x-2 text-xs font-semibold">
                 <Code2 className="h-3.5 w-3.5 text-purple-400" />
-                <span>Extracted Structured Data</span>
+                <span>Extracted Data</span>
+              </TabsTrigger>
+              <TabsTrigger value="ats" className="space-x-2 text-xs font-semibold">
+                <FileCheck className="h-3.5 w-3.5 text-emerald-400" />
+                <span>ATS Analysis</span>
               </TabsTrigger>
             </TabsList>
 
-            {/* Tab 1: Resume Cards Grid & Upload Dropzone */}
+            {/* Tab 1: Resume Cards Grid */}
             <TabsContent value="files" className="space-y-6">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {resumes.map((resume) => (
@@ -413,6 +473,15 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
                 parsedResume={parsedResume}
                 isLoading={isLoadingParsed}
                 onReparse={handleReparseActiveDocument}
+              />
+            </TabsContent>
+
+            {/* Tab 3: ATS & Recruiter Evaluation Report */}
+            <TabsContent value="ats" className="space-y-6">
+              <AtsAnalysisDashboard
+                atsAnalysis={atsAnalysis}
+                isLoading={isLoadingAts}
+                onRunAtsAnalysis={handleRunAtsAnalysis}
               />
             </TabsContent>
           </Tabs>
