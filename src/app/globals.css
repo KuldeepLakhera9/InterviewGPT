@@ -1,26 +1,46 @@
 @import 'tailwindcss';
 
-:root {
-  /* Neutral Backgrounds & Surfaces */
-  --bg-app: HSL(240, 6%, 6%);
-  --bg-surface-1: HSL(240, 5%, 9%);
-  --bg-surface-2: HSL(240, 5%, 13%);
-  --bg-surface-hover: HSL(240, 5%, 16%);
+@layer base {
+  /* Light Theme Tokens */
+  :root,
+  .light {
+    --bg-app: HSL(0, 0%, 98%);
+    --bg-surface-1: HSL(0, 0%, 100%);
+    --bg-surface-2: HSL(240, 5%, 96%);
+    --bg-surface-hover: HSL(240, 5%, 92%);
 
-  /* Borders & Dividers */
-  --border-subtle: HSL(240, 4%, 16%);
-  --border-strong: HSL(240, 4%, 25%);
+    --border-subtle: HSL(240, 6%, 90%);
+    --border-strong: HSL(240, 6%, 80%);
 
-  /* Typography Colors */
-  --text-primary: HSL(0, 0%, 98%);
-  --text-secondary: HSL(240, 4%, 65%);
-  --text-tertiary: HSL(240, 4%, 45%);
+    --text-primary: HSL(240, 10%, 4%);
+    --text-secondary: HSL(240, 4%, 40%);
+    --text-tertiary: HSL(240, 4%, 55%);
 
-  /* Functional Status Accents */
-  --accent-primary: HSL(212, 100%, 55%);
-  --status-success: HSL(142, 71%, 45%);
-  --status-warning: HSL(38, 92%, 50%);
-  --status-danger: HSL(0, 84%, 60%);
+    --accent-primary: HSL(212, 100%, 50%);
+    --status-success: HSL(142, 71%, 38%);
+    --status-warning: HSL(38, 92%, 45%);
+    --status-danger: HSL(0, 84%, 55%);
+  }
+
+  /* Dark Theme Tokens */
+  .dark {
+    --bg-app: HSL(240, 6%, 6%);
+    --bg-surface-1: HSL(240, 5%, 9%);
+    --bg-surface-2: HSL(240, 5%, 13%);
+    --bg-surface-hover: HSL(240, 5%, 16%);
+
+    --border-subtle: HSL(240, 4%, 16%);
+    --border-strong: HSL(240, 4%, 25%);
+
+    --text-primary: HSL(0, 0%, 98%);
+    --text-secondary: HSL(240, 4%, 65%);
+    --text-tertiary: HSL(240, 4%, 45%);
+
+    --accent-primary: HSL(212, 100%, 55%);
+    --status-success: HSL(142, 71%, 45%);
+    --status-warning: HSL(38, 92%, 50%);
+    --status-danger: HSL(0, 84%, 60%);
+  }
 }
 
 body {
@@ -37,4 +57,7 @@ body {
   );
   min-height: 100vh;
   margin: 0;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
 }
