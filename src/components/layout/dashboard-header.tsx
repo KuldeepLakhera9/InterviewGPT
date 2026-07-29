@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { LogOut, Search, User } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -17,10 +18,14 @@ import {
 import { Kbd } from '@/components/ui/kbd';
 import { ThemeToggle } from '@/components/common/theme-toggle';
 import { Breadcrumbs } from '@/components/layout/breadcrumbs';
-import { CommandPalette } from '@/components/layout/command-palette';
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
 import { NotificationPopover } from '@/components/layout/notification-popover';
 import { logoutAction } from '@/features/auth/actions/auth-actions';
+
+const CommandPalette = dynamic(
+  () => import('@/components/layout/command-palette').then((mod) => mod.CommandPalette),
+  { ssr: false }
+);
 
 export function DashboardHeader() {
   const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false);
@@ -105,7 +110,9 @@ export function DashboardHeader() {
         </div>
       </header>
 
-      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+      {commandPaletteOpen && (
+        <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+      )}
     </>
   );
 }
