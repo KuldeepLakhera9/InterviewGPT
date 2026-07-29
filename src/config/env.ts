@@ -21,4 +21,9 @@ if (!_env.success) {
   throw new Error('Invalid environment variables');
 }
 
-export const env = _env.data;
+export const env = {
+  ..._env.data,
+  isProd: _env.data.NODE_ENV === 'production',
+  isDev: _env.data.NODE_ENV === 'development',
+  isTest: _env.data.NODE_ENV === 'test',
+};
