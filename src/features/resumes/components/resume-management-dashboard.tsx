@@ -10,6 +10,7 @@ import {
   FileText,
   Folder,
   Plus,
+  Zap,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,12 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 
-import type { AtsAnalysisRecord, ParsedResumeRecord, ResumeItem } from '../types/resume.types';
+import type {
+  AtsAnalysisRecord,
+  ParsedResumeRecord,
+  ResumeItem,
+  ResumeOptimisationRecord,
+} from '../types/resume.types';
 import {
   deleteResumeAction,
   getParsedResumeAction,
@@ -35,6 +41,10 @@ import {
   uploadResumeAction,
 } from '../actions/resume.actions';
 import { analyzeResumeAtsAction, getAtsAnalysisAction } from '../ats/actions/ats.actions';
+import {
+  getOptimisationHistoryAction,
+  optimiseResumeAction,
+} from '../optimiser/actions/optimiser.actions';
 import { ResumeDropzone } from './resume-dropzone';
 import { ResumePreviewDialog } from './resume-preview-dialog';
 import { ParsedResumeView } from './parsed-resume-view';
@@ -44,6 +54,7 @@ import { ResumeAnalyticsWidget } from './resume-analytics-widget';
 import { ResumeEmptyState } from './resume-empty-state';
 import { ResumeDashboardSkeleton } from './resume-dashboard-skeleton';
 import { AtsAnalysisDashboard } from './ats-analysis-dashboard';
+import { ResumeOptimiserView } from './resume-optimiser-view';
 
 interface ResumeManagementDashboardProps {
   initialResumes: ResumeItem[];
@@ -53,7 +64,9 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   const { toast } = useToast();
   const [resumes, setResumes] = React.useState<ResumeItem[]>(initialResumes || []);
   const [isUploading, setIsUploading] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<'files' | 'parsed' | 'ats'>('files');
+  const [activeTab, setActiveTab] = React.useState<'files' | 'parsed' | 'ats' | 'optimiser'>(
+    'files'
+  );
   const [isInitialLoading, setIsInitialLoading] = React.useState(false);
 
   // Upload Dialog Modal Trigger
@@ -66,6 +79,13 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   // ATS Analysis state
   const [atsAnalysis, setAtsAnalysis] = React.useState<AtsAnalysisRecord | null>(null);
   const [isLoadingAts, setIsLoadingAts] = React.useState(false);
+
+  // Optimiser state
+  const [optimisation, setOptimisation] = React.useState<ResumeOptimisationRecord | null>(null);
+  const [optimisationHistory, setOptimisationHistory] = React.useState<ResumeOptimisationRecord[]>(
+    []
+  );
+  const [isLoadingOptimiser, setIsLoadingOptimiser] = React.useState(false);
 
   // Preview State
   const [previewResume, setPreviewResume] = React.useState<ResumeItem | null>(null);
@@ -82,14 +102,16 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     return resumes.find((r) => r.isActive) || (resumes.length > 0 ? resumes[0] : null);
   }, [resumes]);
 
-  // Fetch parsed resume & ATS records whenever active resume changes
+  // Fetch parsed resume, ATS, & Optimiser records whenever active resume changes
   const fetchResumeMetadata = React.useCallback(async (resumeId: string) => {
     setIsLoadingParsed(true);
     setIsLoadingAts(true);
+    setIsLoadingOptimiser(true);
     try {
-      const [parsedRes, atsRes] = await Promise.all([
+      const [parsedRes, atsRes, optRes] = await Promise.all([
         getParsedResumeAction(resumeId),
         getAtsAnalysisAction(resumeId),
+        getOptimisationHistoryAction(resumeId),
       ]);
 
       if (parsedRes.success && parsedRes.parsedResume) {
@@ -103,12 +125,23 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
       } else {
         setAtsAnalysis(null);
       }
+
+      if (optRes.success && optRes.history) {
+        setOptimisationHistory(optRes.history);
+        setOptimisation(optRes.optimisation || null);
+      } else {
+        setOptimisationHistory([]);
+        setOptimisation(null);
+      }
     } catch {
       setParsedResume(null);
       setAtsAnalysis(null);
+      setOptimisation(null);
+      setOptimisationHistory([]);
     } finally {
       setIsLoadingParsed(false);
       setIsLoadingAts(false);
+      setIsLoadingOptimiser(false);
     }
   }, []);
 
@@ -118,6 +151,8 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     } else {
       setParsedResume(null);
       setAtsAnalysis(null);
+      setOptimisation(null);
+      setOptimisationHistory([]);
     }
   }, [activeResume, fetchResumeMetadata]);
 
@@ -315,6 +350,36 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     }
   };
 
+  // Run Resume Optimiser handler
+  const handleRunOptimiser = async () => {
+    if (!activeResume) return;
+
+    try {
+      const res = await optimiseResumeAction(activeResume.id);
+      if (res.success && res.optimisation) {
+        setOptimisation(res.optimisation);
+        if (res.history) setOptimisationHistory(res.history);
+        toast({
+          title: 'Resume Optimised!',
+          description:
+            'Rewrote bullets with power verbs and metrics without touching original files.',
+        });
+      } else {
+        toast({
+          variant: 'danger',
+          title: 'Optimiser Error',
+          description: res.error || 'Failed to optimise resume content.',
+        });
+      }
+    } catch {
+      toast({
+        variant: 'danger',
+        title: 'Error',
+        description: 'Failed to run resume optimiser pipeline.',
+      });
+    }
+  };
+
   if (isInitialLoading) {
     return <ResumeDashboardSkeleton />;
   }
@@ -328,7 +393,8 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
             Resume Dashboard
           </h1>
           <p className="text-xs text-[var(--text-secondary)]">
-            Manage resume versions, inspect parsed JSON fields, and monitor ATS readiness analytics.
+            Manage resume versions, inspect parsed JSON fields, evaluate ATS readability, and
+            optimize content with AI.
           </p>
         </div>
 
@@ -426,13 +492,13 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           {/* Main Content Tabs */}
           <Tabs
             value={activeTab}
-            onValueChange={(val) => setActiveTab(val as 'files' | 'parsed' | 'ats')}
+            onValueChange={(val) => setActiveTab(val as 'files' | 'parsed' | 'ats' | 'optimiser')}
             className="w-full space-y-6"
           >
-            <TabsList className="grid w-full max-w-xl grid-cols-3 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
+            <TabsList className="grid w-full max-w-2xl grid-cols-4 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
               <TabsTrigger value="files" className="space-x-2 text-xs font-semibold">
                 <Folder className="h-3.5 w-3.5 text-blue-400" />
-                <span>Resume Files ({resumes.length})</span>
+                <span>Files ({resumes.length})</span>
               </TabsTrigger>
               <TabsTrigger value="parsed" className="space-x-2 text-xs font-semibold">
                 <Code2 className="h-3.5 w-3.5 text-purple-400" />
@@ -440,7 +506,11 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
               </TabsTrigger>
               <TabsTrigger value="ats" className="space-x-2 text-xs font-semibold">
                 <FileCheck className="h-3.5 w-3.5 text-emerald-400" />
-                <span>ATS Analysis</span>
+                <span>ATS Report</span>
+              </TabsTrigger>
+              <TabsTrigger value="optimiser" className="space-x-2 text-xs font-semibold">
+                <Zap className="h-3.5 w-3.5 text-amber-400" />
+                <span>AI Optimiser</span>
               </TabsTrigger>
             </TabsList>
 
@@ -482,6 +552,17 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
                 atsAnalysis={atsAnalysis}
                 isLoading={isLoadingAts}
                 onRunAtsAnalysis={handleRunAtsAnalysis}
+              />
+            </TabsContent>
+
+            {/* Tab 4: AI Resume Optimiser */}
+            <TabsContent value="optimiser" className="space-y-6">
+              <ResumeOptimiserView
+                optimisation={optimisation}
+                history={optimisationHistory}
+                isLoading={isLoadingOptimiser}
+                onRunOptimiser={handleRunOptimiser}
+                onSelectHistoryItem={(item) => setOptimisation(item)}
               />
             </TabsContent>
           </Tabs>

@@ -121,6 +121,7 @@ model Resume {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   parsedResume ParsedResume?
   atsAnalysis AtsAnalysis?
+  optimisations ResumeOptimisation[]
 
   @@index([userId, isActive])
   @@index([workspaceId])
@@ -159,4 +160,22 @@ model AtsAnalysis {
   resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@map("ats_analyses")
+}
+
+model ResumeOptimisation {
+  id                    String   @id @default(uuid())
+  resumeId              String   @map("resume_id")
+  originalSummary       String   @map("original_summary")
+  optimisedSummary      String   @map("optimised_summary")
+  originalBullets       Json     @map("original_bullets")
+  optimisedBullets      Json     @map("optimised_bullets")
+  strongerActionVerbs   Json     @map("stronger_action_verbs")
+  measurableImpactItems Json     @map("measurable_impact_items")
+  optimisedTextContent  String   @map("optimised_text_content")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("resume_optimisations")
 }

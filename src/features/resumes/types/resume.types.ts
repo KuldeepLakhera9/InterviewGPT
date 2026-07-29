@@ -85,3 +85,41 @@ export interface AtsAnalysisActionResult {
   error?: string;
   atsAnalysis?: AtsAnalysisRecord;
 }
+
+export interface OptimisedBullet {
+  original: string;
+  rewritten: string;
+  actionVerb: string;
+  impactGain: string;
+}
+
+export interface ActionVerbSuggestion {
+  weakVerb: string;
+  suggestedVerbs: string[];
+}
+
+export interface MeasurableImpactSuggestion {
+  bullet: string;
+  metricSuggestion: string;
+}
+
+export interface ResumeOptimisationRecord {
+  id: string;
+  resumeId: string;
+  originalSummary: string;
+  optimisedSummary: string;
+  originalBullets: string[];
+  optimisedBullets: OptimisedBullet[];
+  strongerActionVerbs: ActionVerbSuggestion[];
+  measurableImpactItems: MeasurableImpactSuggestion[];
+  optimisedTextContent: string;
+  createdAt: string;
+}
+
+export interface ResumeOptimisationActionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  optimisation?: ResumeOptimisationRecord;
+  history?: ResumeOptimisationRecord[];
+}
