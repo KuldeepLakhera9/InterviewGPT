@@ -13,6 +13,7 @@ import {
   Menu,
   Mic,
   Settings,
+  UserCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -21,6 +22,7 @@ import { cn } from '@/lib/utils';
 
 export const NAV_ITEMS = [
   { name: 'Overview', href: '/dashboard', icon: Home },
+  { name: 'Candidate Profile', href: '/candidate-profile', icon: UserCheck },
   { name: 'Resumes', href: '/resumes', icon: FileText },
   { name: 'Mock Interviews', href: '/interviews', icon: Mic },
   { name: 'Scorecards', href: '/scorecards', icon: BarChart3 },

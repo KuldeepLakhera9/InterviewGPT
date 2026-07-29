@@ -3,7 +3,14 @@ import type { NextRequest } from 'next/server';
 
 const AUTH_COOKIE_NAME = 'interview_gpt_session';
 
-const PROTECTED_ROUTES = ['/dashboard', '/interviews', '/resumes', '/scorecards', '/roadmap'];
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/candidate-profile',
+  '/interviews',
+  '/resumes',
+  '/scorecards',
+  '/roadmap',
+];
 const AUTH_ROUTES = ['/login', '/signup', '/forgot-password', '/reset-password'];
 
 export function middleware(request: NextRequest) {
@@ -33,6 +40,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/candidate-profile/:path*',
     '/interviews/:path*',
     '/resumes/:path*',
     '/scorecards/:path*',

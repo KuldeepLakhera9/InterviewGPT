@@ -45,6 +45,7 @@ model User {
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   profile   Profile?
+  candidateProfile CandidateProfile?
   sessions  Session[]
 
   @@index([workspaceId, email])
@@ -65,6 +66,21 @@ model Profile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
+}
+
+model CandidateProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  currentStep      Int      @default(1) @map("current_step")
+  completionStatus Int      @default(0) @map("completion_status")
+  isSubmitted      Boolean  @default(false) @map("is_submitted")
+  draftData        Json     @default("{}") @map("draft_data")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("candidate_profiles")
 }
 
 model Session {
