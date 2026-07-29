@@ -27,3 +27,22 @@ export interface ResumeUploadProgress {
   fileName?: string;
   error?: string;
 }
+
+export interface ParsedResumeRecord {
+  id: string;
+  resumeId: string;
+  rawText: string;
+  cleanedText: string;
+  structuredData: Record<string, unknown>;
+  confidenceScores: Record<string, number>;
+  overallConfidence: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ParsedResumeActionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  parsedResume?: ParsedResumeRecord;
+}

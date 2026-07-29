@@ -2,7 +2,11 @@
 
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import type { ResumeActionResult, ResumeItem } from '../types/resume.types';
+import type {
+  ParsedResumeActionResult,
+  ResumeActionResult,
+  ResumeItem,
+} from '../types/resume.types';
 import { resumeService } from '../services/resume.service';
 
 const AUTH_COOKIE_NAME = 'interview_gpt_session';
@@ -197,6 +201,49 @@ export async function deleteResumeAction(resumeId: string): Promise<ResumeAction
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to delete resume.';
+    return { success: false, error: message };
+  }
+}
+
+export async function getParsedResumeAction(resumeId: string): Promise<ParsedResumeActionResult> {
+  const userRef = await getCurrentUserRef();
+
+  if (!userRef) {
+    return { success: false, error: 'Authentication required.' };
+  }
+
+  try {
+    const parsedResume = await resumeService.getParsedResume(userRef.userId, resumeId);
+    if (!parsedResume) {
+      return { success: false, error: 'Parsed resume data not available.' };
+    }
+
+    return {
+      success: true,
+      parsedResume,
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to get parsed resume.';
+    return { success: false, error: message };
+  }
+}
+
+export async function reparseResumeAction(resumeId: string): Promise<ParsedResumeActionResult> {
+  const userRef = await getCurrentUserRef();
+
+  if (!userRef) {
+    return { success: false, error: 'Authentication required.' };
+  }
+
+  try {
+    const parsedResume = await resumeService.reparseResume(userRef.userId, resumeId);
+    return {
+      success: true,
+      message: 'Resume text extracted and parsed successfully.',
+      parsedResume,
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to reparse resume.';
     return { success: false, error: message };
   }
 }

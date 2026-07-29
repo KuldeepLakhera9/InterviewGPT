@@ -119,8 +119,25 @@ model Resume {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parsedResume ParsedResume?
 
   @@index([userId, isActive])
   @@index([workspaceId])
   @@map("resumes")
+}
+
+model ParsedResume {
+  id                String   @id @default(uuid())
+  resumeId          String   @unique @map("resume_id")
+  rawText           String   @map("raw_text")
+  cleanedText       String   @map("cleaned_text")
+  structuredData    Json     @map("structured_data")
+  confidenceScores  Json     @map("confidence_scores")
+  overallConfidence Float    @map("overall_confidence")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@map("parsed_resumes")
 }

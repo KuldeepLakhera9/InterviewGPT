@@ -1,10 +1,21 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCircle2, Download, Eye, FileText, RefreshCw, Trash2, Upload } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  CheckCircle2,
+  Code2,
+  Download,
+  Eye,
+  FileText,
+  Folder,
+  RefreshCw,
+  Trash2,
+  Upload,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -15,9 +26,11 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 
-import type { ResumeItem } from '../types/resume.types';
+import type { ParsedResumeRecord, ResumeItem } from '../types/resume.types';
 import {
   deleteResumeAction,
+  getParsedResumeAction,
+  reparseResumeAction,
   replaceResumeAction,
   setActiveResumeVersionAction,
   uploadResumeAction,
@@ -25,6 +38,7 @@ import {
 import { ResumeDropzone } from './resume-dropzone';
 import { ResumePreviewDialog } from './resume-preview-dialog';
 import { ResumeVersionHistory } from './resume-version-history';
+import { ParsedResumeView } from './parsed-resume-view';
 
 interface ResumeManagementDashboardProps {
   initialResumes: ResumeItem[];
@@ -34,6 +48,11 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   const { toast } = useToast();
   const [resumes, setResumes] = React.useState<ResumeItem[]>(initialResumes || []);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState<'files' | 'parsed'>('files');
+
+  // Parsed Data state
+  const [parsedResume, setParsedResume] = React.useState<ParsedResumeRecord | null>(null);
+  const [isLoadingParsed, setIsLoadingParsed] = React.useState(false);
 
   // Preview State
   const [previewResume, setPreviewResume] = React.useState<ResumeItem | null>(null);
@@ -49,6 +68,31 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   const activeResume = React.useMemo(() => {
     return resumes.find((r) => r.isActive) || (resumes.length > 0 ? resumes[0] : null);
   }, [resumes]);
+
+  // Fetch parsed resume record whenever active resume changes
+  const fetchParsedData = React.useCallback(async (resumeId: string) => {
+    setIsLoadingParsed(true);
+    try {
+      const res = await getParsedResumeAction(resumeId);
+      if (res.success && res.parsedResume) {
+        setParsedResume(res.parsedResume);
+      } else {
+        setParsedResume(null);
+      }
+    } catch {
+      setParsedResume(null);
+    } finally {
+      setIsLoadingParsed(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (activeResume) {
+      fetchParsedData(activeResume.id);
+    } else {
+      setParsedResume(null);
+    }
+  }, [activeResume, fetchParsedData]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -70,6 +114,9 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           title: 'Resume Uploaded!',
           description: res.message || `Uploaded "${file.name}" as active version.`,
         });
+        if (res.resume) {
+          fetchParsedData(res.resume.id);
+        }
       } else {
         toast({
           variant: 'danger',
@@ -106,6 +153,9 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           title: 'Resume Replaced',
           description: res.message || 'Updated to new version.',
         });
+        if (res.resume) {
+          fetchParsedData(res.resume.id);
+        }
       } else {
         toast({
           variant: 'danger',
@@ -134,6 +184,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           title: 'Active Version Changed',
           description: 'Target resume is now set as active for mock interviews.',
         });
+        fetchParsedData(resumeId);
       } else {
         toast({
           variant: 'danger',
@@ -177,17 +228,45 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     }
   };
 
+  // Reparse document handler
+  const handleReparseActiveDocument = async () => {
+    if (!activeResume) return;
+
+    try {
+      const res = await reparseResumeAction(activeResume.id);
+      if (res.success && res.parsedResume) {
+        setParsedResume(res.parsedResume);
+        toast({
+          title: 'Pipeline Complete',
+          description: 'Extracted text and generated structured JSON data.',
+        });
+      } else {
+        toast({
+          variant: 'danger',
+          title: 'Parsing Failed',
+          description: res.error || 'Failed to extract text from document.',
+        });
+      }
+    } catch {
+      toast({
+        variant: 'danger',
+        title: 'Error',
+        description: 'An unexpected parsing error occurred.',
+      });
+    }
+  };
+
   return (
     <div className="w-full space-y-6">
       {/* Top Page Header */}
-      <div className="flex flex-col gap-2 border-b border-[var(--border-subtle)] pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-[var(--border-subtle)] pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
             Resume Manager
           </h1>
           <p className="text-xs text-[var(--text-secondary)]">
-            Upload, manage, version, and preview your candidate resumes for mock interview
-            simulations.
+            Upload, manage, version, preview, and extract structured JSON data from candidate
+            resumes.
           </p>
         </div>
 
@@ -300,35 +379,60 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
         </div>
       )}
 
-      {/* Upload Dropzone */}
-      <Card className="border-[var(--border-subtle)] bg-[var(--bg-surface-1)]">
-        <CardHeader>
-          <CardTitle className="text-lg font-bold text-[var(--text-primary)]">
-            Upload Resume
-          </CardTitle>
-          <CardDescription className="text-xs text-[var(--text-secondary)]">
-            Drag and drop your latest resume file or browse from your computer.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResumeDropzone onFileSelected={handleUploadFile} isUploading={isUploading} />
-        </CardContent>
-      </Card>
+      {/* Main Tabs: File Manager vs Parsed Structured Data */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => setActiveTab(val as 'files' | 'parsed')}
+        className="w-full space-y-6"
+      >
+        <TabsList className="grid w-full max-w-md grid-cols-2 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
+          <TabsTrigger value="files" className="space-x-2 text-xs font-semibold">
+            <Folder className="h-3.5 w-3.5 text-blue-400" />
+            <span>Files & Versions</span>
+          </TabsTrigger>
+          <TabsTrigger value="parsed" className="space-x-2 text-xs font-semibold">
+            <Code2 className="h-3.5 w-3.5 text-purple-400" />
+            <span>Extracted Structured Data</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Version History Table */}
-      <ResumeVersionHistory
-        resumes={resumes}
-        onSelectPreview={(r) => {
-          setPreviewResume(r);
-          setIsPreviewOpen(true);
-        }}
-        onReplaceResume={(r) => {
-          setReplaceTarget(r);
-          setIsReplaceOpen(true);
-        }}
-        onSetActiveVersion={handleSetActiveVersion}
-        onDeleteResume={async (id) => setDeleteTargetId(id)}
-      />
+        {/* Tab 1: Upload & Version History */}
+        <TabsContent value="files" className="space-y-6">
+          <Card className="border-[var(--border-subtle)] bg-[var(--bg-surface-1)]">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold text-[var(--text-primary)]">
+                Upload Resume
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResumeDropzone onFileSelected={handleUploadFile} isUploading={isUploading} />
+            </CardContent>
+          </Card>
+
+          <ResumeVersionHistory
+            resumes={resumes}
+            onSelectPreview={(r) => {
+              setPreviewResume(r);
+              setIsPreviewOpen(true);
+            }}
+            onReplaceResume={(r) => {
+              setReplaceTarget(r);
+              setIsReplaceOpen(true);
+            }}
+            onSetActiveVersion={handleSetActiveVersion}
+            onDeleteResume={async (id) => setDeleteTargetId(id)}
+          />
+        </TabsContent>
+
+        {/* Tab 2: Parsed Structured JSON Data & Field Confidence Scores */}
+        <TabsContent value="parsed" className="space-y-6">
+          <ParsedResumeView
+            parsedResume={parsedResume}
+            isLoading={isLoadingParsed}
+            onReparse={handleReparseActiveDocument}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Preview Dialog Modal */}
       <ResumePreviewDialog

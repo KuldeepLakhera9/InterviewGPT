@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { getStorageService, type IStorageService } from '@/lib/storage';
-import type { ResumeItem } from '../types/resume.types';
+import type { ParsedResumeRecord, ResumeItem } from '../types/resume.types';
 import { validateResumeFile } from '../utils/resume-validator';
+import { parseResumePipeline } from '../parser/resume-parser.pipeline';
 
 export class ResumeService {
   private storage: IStorageService;
@@ -66,7 +67,7 @@ export class ResumeService {
     // 4. Upload file to decoupled storage service
     const storedFile = await this.storage.uploadFile(buffer, fileName, mimeType);
 
-    // 5. Create database record
+    // 5. Create database record for file
     const created = await prisma.resume.create({
       data: {
         userId,
@@ -80,6 +81,23 @@ export class ResumeService {
         isActive: true,
       },
     });
+
+    // 6. Execute Resume Parsing Pipeline (Extract -> Clean -> Convert -> Evaluate Confidence -> Store in DB)
+    try {
+      const parsedPipeline = await parseResumePipeline(buffer, fileName, mimeType);
+      await prisma.parsedResume.create({
+        data: {
+          resumeId: created.id,
+          rawText: parsedPipeline.rawText,
+          cleanedText: parsedPipeline.cleanedText,
+          structuredData: parsedPipeline.structuredData as unknown as object,
+          confidenceScores: parsedPipeline.confidenceScores as unknown as object,
+          overallConfidence: parsedPipeline.overallConfidence,
+        },
+      });
+    } catch (parseError) {
+      console.error(`Failed to parse resume ${created.id}:`, parseError);
+    }
 
     return {
       id: created.id,
@@ -192,6 +210,70 @@ export class ResumeService {
       buffer: fileContent.buffer,
       mimeType: target.mimeType,
       fileName: target.fileName,
+    };
+  }
+
+  async getParsedResume(userId: string, resumeId: string): Promise<ParsedResumeRecord | null> {
+    const target = await prisma.resume.findUnique({
+      where: { id: resumeId },
+      include: { parsedResume: true },
+    });
+
+    if (!target || target.userId !== userId || !target.parsedResume) {
+      return null;
+    }
+
+    const pr = target.parsedResume;
+    return {
+      id: pr.id,
+      resumeId: pr.resumeId,
+      rawText: pr.rawText,
+      cleanedText: pr.cleanedText,
+      structuredData: pr.structuredData as unknown as Record<string, unknown>,
+      confidenceScores: pr.confidenceScores as unknown as Record<string, number>,
+      overallConfidence: pr.overallConfidence,
+      createdAt: pr.createdAt.toISOString(),
+      updatedAt: pr.updatedAt.toISOString(),
+    };
+  }
+
+  async reparseResume(userId: string, resumeId: string): Promise<ParsedResumeRecord> {
+    const fileData = await this.getResumeFileBuffer(userId, resumeId);
+    const parsedPipeline = await parseResumePipeline(
+      fileData.buffer,
+      fileData.fileName,
+      fileData.mimeType
+    );
+
+    const pr = await prisma.parsedResume.upsert({
+      where: { resumeId },
+      create: {
+        resumeId,
+        rawText: parsedPipeline.rawText,
+        cleanedText: parsedPipeline.cleanedText,
+        structuredData: parsedPipeline.structuredData as unknown as object,
+        confidenceScores: parsedPipeline.confidenceScores as unknown as object,
+        overallConfidence: parsedPipeline.overallConfidence,
+      },
+      update: {
+        rawText: parsedPipeline.rawText,
+        cleanedText: parsedPipeline.cleanedText,
+        structuredData: parsedPipeline.structuredData as unknown as object,
+        confidenceScores: parsedPipeline.confidenceScores as unknown as object,
+        overallConfidence: parsedPipeline.overallConfidence,
+      },
+    });
+
+    return {
+      id: pr.id,
+      resumeId: pr.resumeId,
+      rawText: pr.rawText,
+      cleanedText: pr.cleanedText,
+      structuredData: pr.structuredData as unknown as Record<string, unknown>,
+      confidenceScores: pr.confidenceScores as unknown as Record<string, number>,
+      overallConfidence: pr.overallConfidence,
+      createdAt: pr.createdAt.toISOString(),
+      updatedAt: pr.updatedAt.toISOString(),
     };
   }
 }
