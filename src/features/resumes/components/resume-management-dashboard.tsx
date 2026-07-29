@@ -10,6 +10,7 @@ import {
   FileText,
   Folder,
   Plus,
+  Target,
   Zap,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,6 +29,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 import type {
   AtsAnalysisRecord,
+  JobMatchRecord,
   ParsedResumeRecord,
   ResumeItem,
   ResumeOptimisationRecord,
@@ -45,6 +47,10 @@ import {
   getOptimisationHistoryAction,
   optimiseResumeAction,
 } from '../optimiser/actions/optimiser.actions';
+import {
+  compareJobDescriptionAction,
+  getJobMatchHistoryAction,
+} from '../job-matching/actions/job-matching.actions';
 import { ResumeDropzone } from './resume-dropzone';
 import { ResumePreviewDialog } from './resume-preview-dialog';
 import { ParsedResumeView } from './parsed-resume-view';
@@ -55,6 +61,7 @@ import { ResumeEmptyState } from './resume-empty-state';
 import { ResumeDashboardSkeleton } from './resume-dashboard-skeleton';
 import { AtsAnalysisDashboard } from './ats-analysis-dashboard';
 import { ResumeOptimiserView } from './resume-optimiser-view';
+import { JobMatchingView } from './job-matching-view';
 
 interface ResumeManagementDashboardProps {
   initialResumes: ResumeItem[];
@@ -64,9 +71,9 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   const { toast } = useToast();
   const [resumes, setResumes] = React.useState<ResumeItem[]>(initialResumes || []);
   const [isUploading, setIsUploading] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<'files' | 'parsed' | 'ats' | 'optimiser'>(
-    'files'
-  );
+  const [activeTab, setActiveTab] = React.useState<
+    'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch'
+  >('files');
   const [isInitialLoading, setIsInitialLoading] = React.useState(false);
 
   // Upload Dialog Modal Trigger
@@ -87,6 +94,11 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   );
   const [isLoadingOptimiser, setIsLoadingOptimiser] = React.useState(false);
 
+  // Job Matching state
+  const [jobMatch, setJobMatch] = React.useState<JobMatchRecord | null>(null);
+  const [jobMatchHistory, setJobMatchHistory] = React.useState<JobMatchRecord[]>([]);
+  const [isLoadingJobMatch, setIsLoadingJobMatch] = React.useState(false);
+
   // Preview State
   const [previewResume, setPreviewResume] = React.useState<ResumeItem | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
@@ -102,16 +114,18 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     return resumes.find((r) => r.isActive) || (resumes.length > 0 ? resumes[0] : null);
   }, [resumes]);
 
-  // Fetch parsed resume, ATS, & Optimiser records whenever active resume changes
+  // Fetch parsed resume, ATS, Optimiser, & Job Match records whenever active resume changes
   const fetchResumeMetadata = React.useCallback(async (resumeId: string) => {
     setIsLoadingParsed(true);
     setIsLoadingAts(true);
     setIsLoadingOptimiser(true);
+    setIsLoadingJobMatch(true);
     try {
-      const [parsedRes, atsRes, optRes] = await Promise.all([
+      const [parsedRes, atsRes, optRes, jmRes] = await Promise.all([
         getParsedResumeAction(resumeId),
         getAtsAnalysisAction(resumeId),
         getOptimisationHistoryAction(resumeId),
+        getJobMatchHistoryAction(resumeId),
       ]);
 
       if (parsedRes.success && parsedRes.parsedResume) {
@@ -133,15 +147,26 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
         setOptimisationHistory([]);
         setOptimisation(null);
       }
+
+      if (jmRes.success && jmRes.history) {
+        setJobMatchHistory(jmRes.history);
+        setJobMatch(jmRes.jobMatch || null);
+      } else {
+        setJobMatchHistory([]);
+        setJobMatch(null);
+      }
     } catch {
       setParsedResume(null);
       setAtsAnalysis(null);
       setOptimisation(null);
       setOptimisationHistory([]);
+      setJobMatch(null);
+      setJobMatchHistory([]);
     } finally {
       setIsLoadingParsed(false);
       setIsLoadingAts(false);
       setIsLoadingOptimiser(false);
+      setIsLoadingJobMatch(false);
     }
   }, []);
 
@@ -153,6 +178,8 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
       setAtsAnalysis(null);
       setOptimisation(null);
       setOptimisationHistory([]);
+      setJobMatch(null);
+      setJobMatchHistory([]);
     }
   }, [activeResume, fetchResumeMetadata]);
 
@@ -380,6 +407,35 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     }
   };
 
+  // Run Job Matching handler
+  const handleRunJobMatching = async (jdText: string, jobTitle?: string, companyName?: string) => {
+    if (!activeResume) return;
+
+    try {
+      const res = await compareJobDescriptionAction(activeResume.id, jdText, jobTitle, companyName);
+      if (res.success && res.jobMatch) {
+        setJobMatch(res.jobMatch);
+        if (res.history) setJobMatchHistory(res.history);
+        toast({
+          title: 'Job Match Analysis Complete!',
+          description: `Evaluated ${res.jobMatch.overallMatchPercentage}% match score for ${res.jobMatch.jobTitle}.`,
+        });
+      } else {
+        toast({
+          variant: 'danger',
+          title: 'Job Matching Error',
+          description: res.error || 'Failed to compare resume with Job Description.',
+        });
+      }
+    } catch {
+      toast({
+        variant: 'danger',
+        title: 'Error',
+        description: 'Failed to execute Job Description matching pipeline.',
+      });
+    }
+  };
+
   if (isInitialLoading) {
     return <ResumeDashboardSkeleton />;
   }
@@ -393,8 +449,8 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
             Resume Dashboard
           </h1>
           <p className="text-xs text-[var(--text-secondary)]">
-            Manage resume versions, inspect parsed JSON fields, evaluate ATS readability, and
-            optimize content with AI.
+            Manage resume versions, inspect parsed JSON fields, evaluate ATS readability, optimize
+            content, and match target Job Descriptions.
           </p>
         </div>
 
@@ -492,10 +548,12 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           {/* Main Content Tabs */}
           <Tabs
             value={activeTab}
-            onValueChange={(val) => setActiveTab(val as 'files' | 'parsed' | 'ats' | 'optimiser')}
+            onValueChange={(val) =>
+              setActiveTab(val as 'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch')
+            }
             className="w-full space-y-6"
           >
-            <TabsList className="grid w-full max-w-2xl grid-cols-4 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
+            <TabsList className="grid w-full max-w-3xl grid-cols-5 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
               <TabsTrigger value="files" className="space-x-2 text-xs font-semibold">
                 <Folder className="h-3.5 w-3.5 text-blue-400" />
                 <span>Files ({resumes.length})</span>
@@ -511,6 +569,10 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
               <TabsTrigger value="optimiser" className="space-x-2 text-xs font-semibold">
                 <Zap className="h-3.5 w-3.5 text-amber-400" />
                 <span>AI Optimiser</span>
+              </TabsTrigger>
+              <TabsTrigger value="jobmatch" className="space-x-2 text-xs font-semibold">
+                <Target className="h-3.5 w-3.5 text-blue-400" />
+                <span>Job Matcher</span>
               </TabsTrigger>
             </TabsList>
 
@@ -563,6 +625,17 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
                 isLoading={isLoadingOptimiser}
                 onRunOptimiser={handleRunOptimiser}
                 onSelectHistoryItem={(item) => setOptimisation(item)}
+              />
+            </TabsContent>
+
+            {/* Tab 5: Job Description Matcher */}
+            <TabsContent value="jobmatch" className="space-y-6">
+              <JobMatchingView
+                jobMatch={jobMatch}
+                history={jobMatchHistory}
+                isLoading={isLoadingJobMatch}
+                onCompare={handleRunJobMatching}
+                onSelectHistoryItem={(item) => setJobMatch(item)}
               />
             </TabsContent>
           </Tabs>

@@ -123,3 +123,43 @@ export interface ResumeOptimisationActionResult {
   optimisation?: ResumeOptimisationRecord;
   history?: ResumeOptimisationRecord[];
 }
+
+export interface KeywordGapItem {
+  keyword: string;
+  significance: string;
+}
+
+export interface RecommendedImprovementItem {
+  area: string;
+  suggestion: string;
+  impact: 'High' | 'Medium' | 'Low';
+}
+
+export interface LearningResourceItem {
+  title: string;
+  platform: string;
+  link: string;
+  reason: string;
+}
+
+export interface JobMatchRecord {
+  id: string;
+  resumeId: string;
+  jobTitle: string;
+  companyName: string;
+  jobDescriptionText: string;
+  overallMatchPercentage: number;
+  missingSkills: string[];
+  keywordGaps: KeywordGapItem[];
+  recommendedImprovements: RecommendedImprovementItem[];
+  recommendedLearningResources: LearningResourceItem[];
+  createdAt: string;
+}
+
+export interface JobMatchActionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  jobMatch?: JobMatchRecord;
+  history?: JobMatchRecord[];
+}
