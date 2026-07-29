@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ThemeProvider } from '@/components/common/theme-provider';
+import { Toaster } from '@/components/ui/toaster';
 import { siteConfig } from '@/config/site';
 import './globals.css';
 
@@ -26,6 +27,7 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
