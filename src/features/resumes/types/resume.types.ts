@@ -163,3 +163,50 @@ export interface JobMatchActionResult {
   jobMatch?: JobMatchRecord;
   history?: JobMatchRecord[];
 }
+
+export interface AtsHistoryPoint {
+  version: string;
+  score: number;
+  date: string;
+}
+
+export interface KeywordTrendPoint {
+  category: string;
+  originalCount: number;
+  optimisedCount: number;
+}
+
+export interface ImprovementTrendPoint {
+  version: string;
+  actionVerbStrength: number;
+  measurableMetricsCount: number;
+  impactGain: number;
+}
+
+export interface ProfileCompletionSection {
+  sectionName: string;
+  completionPercentage: number;
+  isComplete: boolean;
+}
+
+export interface SkillCoverageDomain {
+  domain: string;
+  coveragePercentage: number;
+  skillsCount: number;
+}
+
+export interface ResumeAnalyticsData {
+  overallCompletionPercentage: number;
+  atsHistory: AtsHistoryPoint[];
+  keywordTrends: KeywordTrendPoint[];
+  improvementTrends: ImprovementTrendPoint[];
+  profileCompletionSections: ProfileCompletionSection[];
+  skillCoverageDomains: SkillCoverageDomain[];
+}
+
+export interface ResumeAnalyticsActionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  analytics?: ResumeAnalyticsData;
+}

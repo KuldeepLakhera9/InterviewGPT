@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import {
+  BarChart3,
   CheckCircle2,
   Code2,
   Download,
@@ -62,6 +63,7 @@ import { ResumeDashboardSkeleton } from './resume-dashboard-skeleton';
 import { AtsAnalysisDashboard } from './ats-analysis-dashboard';
 import { ResumeOptimiserView } from './resume-optimiser-view';
 import { JobMatchingView } from './job-matching-view';
+import { ResumeAnalyticsDashboard } from './resume-analytics-dashboard';
 
 interface ResumeManagementDashboardProps {
   initialResumes: ResumeItem[];
@@ -72,7 +74,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   const [resumes, setResumes] = React.useState<ResumeItem[]>(initialResumes || []);
   const [isUploading, setIsUploading] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<
-    'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch'
+    'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch' | 'analytics'
   >('files');
   const [isInitialLoading, setIsInitialLoading] = React.useState(false);
 
@@ -450,7 +452,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           </h1>
           <p className="text-xs text-[var(--text-secondary)]">
             Manage resume versions, inspect parsed JSON fields, evaluate ATS readability, optimize
-            content, and match target Job Descriptions.
+            content, match job descriptions, and view visual analytics.
           </p>
         </div>
 
@@ -549,18 +551,20 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           <Tabs
             value={activeTab}
             onValueChange={(val) =>
-              setActiveTab(val as 'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch')
+              setActiveTab(
+                val as 'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch' | 'analytics'
+              )
             }
             className="w-full space-y-6"
           >
-            <TabsList className="grid w-full max-w-3xl grid-cols-5 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
+            <TabsList className="grid w-full max-w-4xl grid-cols-6 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
               <TabsTrigger value="files" className="space-x-2 text-xs font-semibold">
                 <Folder className="h-3.5 w-3.5 text-blue-400" />
                 <span>Files ({resumes.length})</span>
               </TabsTrigger>
               <TabsTrigger value="parsed" className="space-x-2 text-xs font-semibold">
                 <Code2 className="h-3.5 w-3.5 text-purple-400" />
-                <span>Extracted Data</span>
+                <span>Extracted</span>
               </TabsTrigger>
               <TabsTrigger value="ats" className="space-x-2 text-xs font-semibold">
                 <FileCheck className="h-3.5 w-3.5 text-emerald-400" />
@@ -568,11 +572,15 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
               </TabsTrigger>
               <TabsTrigger value="optimiser" className="space-x-2 text-xs font-semibold">
                 <Zap className="h-3.5 w-3.5 text-amber-400" />
-                <span>AI Optimiser</span>
+                <span>Optimiser</span>
               </TabsTrigger>
               <TabsTrigger value="jobmatch" className="space-x-2 text-xs font-semibold">
                 <Target className="h-3.5 w-3.5 text-blue-400" />
                 <span>Job Matcher</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="space-x-2 text-xs font-semibold">
+                <BarChart3 className="h-3.5 w-3.5 text-indigo-400" />
+                <span>Analytics</span>
               </TabsTrigger>
             </TabsList>
 
@@ -637,6 +645,11 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
                 onCompare={handleRunJobMatching}
                 onSelectHistoryItem={(item) => setJobMatch(item)}
               />
+            </TabsContent>
+
+            {/* Tab 6: Visual Resume Analytics */}
+            <TabsContent value="analytics" className="space-y-6">
+              <ResumeAnalyticsDashboard resumeId={activeResume?.id} />
             </TabsContent>
           </Tabs>
         </>
