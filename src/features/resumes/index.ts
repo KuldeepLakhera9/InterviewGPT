@@ -1,5 +1,7 @@
 export * from './types/resume.types';
 export * from './utils/resume-validator';
+export * from './utils/resume-cache';
+export * from './utils/resume-errors';
 export * from './services/resume.service';
 export * from './actions/resume.actions';
 export * from './parser/extractors/text-extractor';

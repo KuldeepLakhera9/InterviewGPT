@@ -8,6 +8,7 @@ import { jobMatchingService } from '../services/job-matching.service';
 const AUTH_COOKIE_NAME = 'interview_gpt_session';
 
 async function getCurrentUserRef(): Promise<{ userId: string; workspaceId: string } | null> {
+  if (!process.env.DATABASE_URL) return null;
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME)?.value;
