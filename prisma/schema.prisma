@@ -123,6 +123,7 @@ model Resume {
   atsAnalysis AtsAnalysis?
   optimisations ResumeOptimisation[]
   jobMatches JobMatchComparison[]
+  assistantSessions ResumeAssistantSession[]
 
   @@index([userId, isActive])
   @@index([workspaceId])
@@ -198,4 +199,32 @@ model JobMatchComparison {
 
   @@index([resumeId])
   @@map("job_match_comparisons")
+}
+
+model ResumeAssistantSession {
+  id        String                   @id @default(uuid())
+  resumeId  String                   @map("resume_id")
+  title     String?                  @map("title")
+  createdAt DateTime                 @default(now()) @map("created_at")
+  updatedAt DateTime                 @updatedAt @map("updated_at")
+
+  resume   Resume                   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  messages ResumeAssistantMessage[]
+
+  @@index([resumeId])
+  @@map("resume_assistant_sessions")
+}
+
+model ResumeAssistantMessage {
+  id        String                 @id @default(uuid())
+  sessionId String                 @map("session_id")
+  role      String                 @map("role")
+  content   String                 @map("content")
+  metadata  Json?                  @map("metadata")
+  createdAt DateTime               @default(now()) @map("created_at")
+
+  session ResumeAssistantSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("resume_assistant_messages")
 }

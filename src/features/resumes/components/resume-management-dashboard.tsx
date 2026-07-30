@@ -3,6 +3,7 @@
 import * as React from 'react';
 import {
   BarChart3,
+  Bot,
   CheckCircle2,
   Code2,
   Download,
@@ -32,6 +33,8 @@ import type {
   AtsAnalysisRecord,
   JobMatchRecord,
   ParsedResumeRecord,
+  ResumeAssistantMessageRecord,
+  ResumeAssistantSessionRecord,
   ResumeItem,
   ResumeOptimisationRecord,
 } from '../types/resume.types';
@@ -52,6 +55,11 @@ import {
   compareJobDescriptionAction,
   getJobMatchHistoryAction,
 } from '../job-matching/actions/job-matching.actions';
+import {
+  getAssistantSessionMessagesAction,
+  getAssistantSessionsAction,
+  sendAssistantMessageAction,
+} from '../assistant/actions/assistant.actions';
 import { ResumeDropzone } from './resume-dropzone';
 import { ResumePreviewDialog } from './resume-preview-dialog';
 import { ParsedResumeView } from './parsed-resume-view';
@@ -64,6 +72,7 @@ import { AtsAnalysisDashboard } from './ats-analysis-dashboard';
 import { ResumeOptimiserView } from './resume-optimiser-view';
 import { JobMatchingView } from './job-matching-view';
 import { ResumeAnalyticsDashboard } from './resume-analytics-dashboard';
+import { ResumeAssistantView } from './resume-assistant-view';
 
 interface ResumeManagementDashboardProps {
   initialResumes: ResumeItem[];
@@ -74,7 +83,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   const [resumes, setResumes] = React.useState<ResumeItem[]>(initialResumes || []);
   const [isUploading, setIsUploading] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<
-    'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch' | 'analytics'
+    'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch' | 'analytics' | 'assistant'
   >('files');
   const [isInitialLoading, setIsInitialLoading] = React.useState(false);
 
@@ -101,6 +110,17 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
   const [jobMatchHistory, setJobMatchHistory] = React.useState<JobMatchRecord[]>([]);
   const [isLoadingJobMatch, setIsLoadingJobMatch] = React.useState(false);
 
+  // Assistant state
+  const [assistantSession, setAssistantSession] =
+    React.useState<ResumeAssistantSessionRecord | null>(null);
+  const [assistantSessions, setAssistantSessions] = React.useState<ResumeAssistantSessionRecord[]>(
+    []
+  );
+  const [assistantMessages, setAssistantMessages] = React.useState<ResumeAssistantMessageRecord[]>(
+    []
+  );
+  const [isLoadingAssistant, setIsLoadingAssistant] = React.useState(false);
+
   // Preview State
   const [previewResume, setPreviewResume] = React.useState<ResumeItem | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
@@ -116,18 +136,20 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     return resumes.find((r) => r.isActive) || (resumes.length > 0 ? resumes[0] : null);
   }, [resumes]);
 
-  // Fetch parsed resume, ATS, Optimiser, & Job Match records whenever active resume changes
+  // Fetch parsed resume, ATS, Optimiser, Job Match, & Assistant records whenever active resume changes
   const fetchResumeMetadata = React.useCallback(async (resumeId: string) => {
     setIsLoadingParsed(true);
     setIsLoadingAts(true);
     setIsLoadingOptimiser(true);
     setIsLoadingJobMatch(true);
+    setIsLoadingAssistant(true);
     try {
-      const [parsedRes, atsRes, optRes, jmRes] = await Promise.all([
+      const [parsedRes, atsRes, optRes, jmRes, astRes] = await Promise.all([
         getParsedResumeAction(resumeId),
         getAtsAnalysisAction(resumeId),
         getOptimisationHistoryAction(resumeId),
         getJobMatchHistoryAction(resumeId),
+        getAssistantSessionsAction(resumeId),
       ]);
 
       if (parsedRes.success && parsedRes.parsedResume) {
@@ -157,6 +179,16 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
         setJobMatchHistory([]);
         setJobMatch(null);
       }
+
+      if (astRes.success && astRes.sessions) {
+        setAssistantSessions(astRes.sessions);
+        setAssistantSession(astRes.session || null);
+        setAssistantMessages(astRes.messages || []);
+      } else {
+        setAssistantSessions([]);
+        setAssistantSession(null);
+        setAssistantMessages([]);
+      }
     } catch {
       setParsedResume(null);
       setAtsAnalysis(null);
@@ -164,11 +196,15 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
       setOptimisationHistory([]);
       setJobMatch(null);
       setJobMatchHistory([]);
+      setAssistantSessions([]);
+      setAssistantSession(null);
+      setAssistantMessages([]);
     } finally {
       setIsLoadingParsed(false);
       setIsLoadingAts(false);
       setIsLoadingOptimiser(false);
       setIsLoadingJobMatch(false);
+      setIsLoadingAssistant(false);
     }
   }, []);
 
@@ -182,6 +218,9 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
       setOptimisationHistory([]);
       setJobMatch(null);
       setJobMatchHistory([]);
+      setAssistantSessions([]);
+      setAssistantSession(null);
+      setAssistantMessages([]);
     }
   }, [activeResume, fetchResumeMetadata]);
 
@@ -438,6 +477,47 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
     }
   };
 
+  // Send Assistant Message handler
+  const handleSendAssistantMessage = async (content: string, sessionId?: string) => {
+    if (!activeResume) return;
+
+    try {
+      const res = await sendAssistantMessageAction(activeResume.id, sessionId, content);
+      if (res.success) {
+        if (res.session) setAssistantSession(res.session);
+        if (res.sessions) setAssistantSessions(res.sessions);
+        if (res.messages) setAssistantMessages(res.messages);
+      } else {
+        toast({
+          variant: 'danger',
+          title: 'Assistant Error',
+          description: res.error || 'Failed to send message.',
+        });
+      }
+    } catch {
+      toast({
+        variant: 'danger',
+        title: 'Error',
+        description: 'Failed to get response from AI Assistant.',
+      });
+    }
+  };
+
+  // Select Assistant Session handler
+  const handleSelectAssistantSession = async (sessionId: string) => {
+    setIsLoadingAssistant(true);
+    try {
+      const targetSession = assistantSessions.find((s) => s.id === sessionId) || null;
+      setAssistantSession(targetSession);
+      const res = await getAssistantSessionMessagesAction(sessionId);
+      if (res.success && res.messages) {
+        setAssistantMessages(res.messages);
+      }
+    } finally {
+      setIsLoadingAssistant(false);
+    }
+  };
+
   if (isInitialLoading) {
     return <ResumeDashboardSkeleton />;
   }
@@ -452,7 +532,7 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
           </h1>
           <p className="text-xs text-[var(--text-secondary)]">
             Manage resume versions, inspect parsed JSON fields, evaluate ATS readability, optimize
-            content, match job descriptions, and view visual analytics.
+            content, match job descriptions, view visual analytics, and chat with RAG AI Coach.
           </p>
         </div>
 
@@ -552,35 +632,40 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
             value={activeTab}
             onValueChange={(val) =>
               setActiveTab(
-                val as 'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch' | 'analytics'
+                val as
+                  'files' | 'parsed' | 'ats' | 'optimiser' | 'jobmatch' | 'analytics' | 'assistant'
               )
             }
             className="w-full space-y-6"
           >
-            <TabsList className="grid w-full max-w-4xl grid-cols-6 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
-              <TabsTrigger value="files" className="space-x-2 text-xs font-semibold">
+            <TabsList className="grid w-full max-w-5xl grid-cols-7 border border-[var(--border-subtle)] bg-[var(--bg-surface-1)] p-1">
+              <TabsTrigger value="files" className="space-x-1.5 text-xs font-semibold">
                 <Folder className="h-3.5 w-3.5 text-blue-400" />
-                <span>Files ({resumes.length})</span>
+                <span>Files</span>
               </TabsTrigger>
-              <TabsTrigger value="parsed" className="space-x-2 text-xs font-semibold">
+              <TabsTrigger value="parsed" className="space-x-1.5 text-xs font-semibold">
                 <Code2 className="h-3.5 w-3.5 text-purple-400" />
                 <span>Extracted</span>
               </TabsTrigger>
-              <TabsTrigger value="ats" className="space-x-2 text-xs font-semibold">
+              <TabsTrigger value="ats" className="space-x-1.5 text-xs font-semibold">
                 <FileCheck className="h-3.5 w-3.5 text-emerald-400" />
                 <span>ATS Report</span>
               </TabsTrigger>
-              <TabsTrigger value="optimiser" className="space-x-2 text-xs font-semibold">
+              <TabsTrigger value="optimiser" className="space-x-1.5 text-xs font-semibold">
                 <Zap className="h-3.5 w-3.5 text-amber-400" />
                 <span>Optimiser</span>
               </TabsTrigger>
-              <TabsTrigger value="jobmatch" className="space-x-2 text-xs font-semibold">
+              <TabsTrigger value="jobmatch" className="space-x-1.5 text-xs font-semibold">
                 <Target className="h-3.5 w-3.5 text-blue-400" />
                 <span>Job Matcher</span>
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="space-x-2 text-xs font-semibold">
+              <TabsTrigger value="analytics" className="space-x-1.5 text-xs font-semibold">
                 <BarChart3 className="h-3.5 w-3.5 text-indigo-400" />
                 <span>Analytics</span>
+              </TabsTrigger>
+              <TabsTrigger value="assistant" className="space-x-1.5 text-xs font-semibold">
+                <Bot className="h-3.5 w-3.5 text-cyan-400" />
+                <span>AI Coach</span>
               </TabsTrigger>
             </TabsList>
 
@@ -650,6 +735,22 @@ export function ResumeManagementDashboard({ initialResumes }: ResumeManagementDa
             {/* Tab 6: Visual Resume Analytics */}
             <TabsContent value="analytics" className="space-y-6">
               <ResumeAnalyticsDashboard resumeId={activeResume?.id} />
+            </TabsContent>
+
+            {/* Tab 7: RAG Resume AI Assistant */}
+            <TabsContent value="assistant" className="space-y-6">
+              <ResumeAssistantView
+                currentSession={assistantSession}
+                sessions={assistantSessions}
+                messages={assistantMessages}
+                isLoading={isLoadingAssistant}
+                onSendMessage={handleSendAssistantMessage}
+                onSelectSession={handleSelectAssistantSession}
+                onNewSession={() => {
+                  setAssistantSession(null);
+                  setAssistantMessages([]);
+                }}
+              />
             </TabsContent>
           </Tabs>
         </>

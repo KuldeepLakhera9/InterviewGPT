@@ -210,3 +210,29 @@ export interface ResumeAnalyticsActionResult {
   error?: string;
   analytics?: ResumeAnalyticsData;
 }
+
+export interface ResumeAssistantSessionRecord {
+  id: string;
+  resumeId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ResumeAssistantMessageRecord {
+  id: string;
+  sessionId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface ResumeAssistantActionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  session?: ResumeAssistantSessionRecord;
+  sessions?: ResumeAssistantSessionRecord[];
+  messages?: ResumeAssistantMessageRecord[];
+}
