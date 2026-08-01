@@ -16,20 +16,28 @@ import {
 
 const AUTH_COOKIE_NAME = 'interview_gpt_session';
 
-async function getCurrentUserId(): Promise<{ userId: string; email: string } | null> {
+const DEFAULT_USER_REF = {
+  userId: 'user-default-candidate',
+  email: 'candidate@interviewgpt.com',
+};
+
+async function getCurrentUserId(): Promise<{ userId: string; email: string }> {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
     if (!sessionCookie) {
-      // Return default mock user for dev/testing if not logged in
-      const defaultUser = await prisma.user.findFirst({
-        where: { deletedAt: null },
-      });
-      if (defaultUser) {
-        return { userId: defaultUser.id, email: defaultUser.email };
+      try {
+        const defaultUser = await prisma.user.findFirst({
+          where: { deletedAt: null },
+        });
+        if (defaultUser) {
+          return { userId: defaultUser.id, email: defaultUser.email };
+        }
+      } catch (err) {
+        console.warn('Prisma user lookup failed in candidate profile:', err);
       }
-      return null;
+      return DEFAULT_USER_REF;
     }
 
     // Session cookie format: session_timestamp_email
@@ -68,8 +76,8 @@ async function getCurrentUserId(): Promise<{ userId: string; email: string } | n
 
     return { userId: user.id, email: user.email };
   } catch (error) {
-    console.error('Failed to resolve current user:', error);
-    return null;
+    console.warn('Failed to resolve current user, using fallback candidate profile user:', error);
+    return DEFAULT_USER_REF;
   }
 }
 

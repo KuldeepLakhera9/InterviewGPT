@@ -29,6 +29,8 @@ model Workspace {
 
   users User[]
   resumes Resume[]
+  interviewSessions InterviewSession[]
+  evaluationReports EvaluationReport[]
 
   @@map("workspaces")
 }
@@ -49,6 +51,11 @@ model User {
   candidateProfile CandidateProfile?
   sessions  Session[]
   resumes   Resume[]
+  interviewSessions InterviewSession[]
+  interviewDraft InterviewWizardDraft?
+  interviewPresets InterviewPreset[]
+  questionBankItems QuestionBankItem[]
+  evaluationReports EvaluationReport[]
 
   @@index([workspaceId, email])
   @@index([deletedAt])
@@ -124,6 +131,7 @@ model Resume {
   optimisations ResumeOptimisation[]
   jobMatches JobMatchComparison[]
   assistantSessions ResumeAssistantSession[]
+  interviewSessions InterviewSession[]
 
   @@index([userId, isActive])
   @@index([workspaceId])
@@ -227,4 +235,154 @@ model ResumeAssistantMessage {
 
   @@index([sessionId])
   @@map("resume_assistant_messages")
+}
+
+model InterviewSession {
+  id              String   @id @default(uuid())
+  workspaceId     String   @map("workspace_id")
+  userId          String   @map("user_id")
+  resumeId        String?  @map("resume_id")
+  roleTitle       String   @map("role_title")
+  seniorityLevel  String   @map("seniority_level")
+  companyName     String?  @map("company_name")
+  companyTier     String   @map("company_tier")
+  track           String   @map("track")
+  difficulty      String   @map("difficulty")
+  durationMinutes Int      @map("duration_minutes")
+  focusAreas      Json     @default("[]") @map("focus_areas")
+  adaptiveMode    Boolean  @default(true) @map("adaptive_mode")
+  status          String   @default("created")
+  isArchived      Boolean  @default(false) @map("is_archived")
+  startedAt       DateTime? @map("started_at")
+  pausedAt        DateTime? @map("paused_at")
+  endedAt         DateTime? @map("ended_at")
+  elapsedSeconds  Int      @default(0) @map("elapsed_seconds")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  resume Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  turns InterviewTurn[]
+  evaluation EvaluationReport?
+
+  @@index([userId, status])
+  @@index([workspaceId])
+  @@map("interview_sessions")
+}
+
+model InterviewTurn {
+  id          String   @id @default(uuid())
+  sessionId   String   @map("session_id")
+  turnIndex   Int      @map("turn_index")
+  speaker     String   // interviewer | candidate | system
+  messageText String   @map("message_text") @db.Text
+  questionId  String?  @map("question_id")
+  phase       String   // introduction | primary_question | followup_probe | topic_transition | wrap_up
+  topic       String?
+  difficulty  String?
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, turnIndex])
+  @@map("interview_turns")
+}
+
+model InterviewWizardDraft {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  currentStep Int      @default(1) @map("current_step")
+  draftData   Json     @default("{}") @map("draft_data")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("interview_wizard_drafts")
+}
+
+model InterviewPreset {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  name            String
+  description     String?
+  roleTitle       String   @map("role_title")
+  seniorityLevel  String   @map("seniority_level")
+  companyName     String?  @map("company_name")
+  companyTier     String   @map("company_tier")
+  track           String   @map("track")
+  difficulty      String   @map("difficulty")
+  durationMinutes Int      @map("duration_minutes")
+  focusAreas      Json     @default("[]") @map("focus_areas")
+  adaptiveMode    Boolean  @default(true) @map("adaptive_mode")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("interview_presets")
+}
+
+model QuestionBankItem {
+  id                      String   @id @default(uuid())
+  title                   String
+  questionText            String   @map("question_text")
+  category                String   @map("category")
+  topic                   String   @map("topic")
+  difficulty              String   @map("difficulty")
+  companyTags             Json     @default("[]") @map("company_tags")
+  roleTags                Json     @default("[]") @map("role_tags")
+  expectedDurationSeconds Int      @default(300) @map("expected_duration_seconds")
+  followUpReferences      Json     @default("[]") @map("follow_up_references")
+  evaluationMetadata      Json     @default("{}") @map("evaluation_metadata")
+  isAiGenerated           Boolean  @default(false) @map("is_ai_generated")
+  source                  String   @default("system") @map("source")
+  createdById             String?  @map("created_by_id")
+  workspaceId             String?  @map("workspace_id")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([category, difficulty])
+  @@index([topic])
+  @@index([workspaceId])
+  @@map("question_bank_items")
+}
+
+model EvaluationReport {
+  id                   String   @id @default(uuid())
+  sessionId            String   @unique @map("session_id")
+  workspaceId          String   @map("workspace_id")
+  userId               String   @map("user_id")
+  overallScore         Int      @map("overall_score")
+  technicalScore       Int      @map("technical_score")
+  communicationScore   Int      @map("communication_score")
+  behaviouralScore     Int      @map("behavioural_score")
+  hiringRecommendation String   @map("hiring_recommendation")
+  hiringJustification  String   @map("hiring_justification") @db.Text
+  executiveSummary     String   @map("executive_summary") @db.Text
+  strengths            Json     @default("[]")
+  weaknesses           Json     @default("[]")
+  answerEvaluations    Json     @default("[]") @map("answer_evaluations")
+  communicationMetrics Json     @default("{}") @map("communication_metrics")
+  starFramework        Json     @default("{}") @map("star_framework")
+  skillGraph           Json     @default("{}") @map("skill_graph")
+  knowledgeGaps        Json     @default("[]") @map("knowledge_gaps")
+  confidenceAnalysis   Json     @default("{}") @map("confidence_analysis")
+  learningRoadmap      Json     @default("{}") @map("learning_roadmap")
+  recommendedNextSession Json   @default("{}") @map("recommended_next_session")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@map("evaluation_reports")
 }

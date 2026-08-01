@@ -22,3 +22,5 @@ export * from './spinner';
 export * from './typography';
 export * from './kbd';
 export * from './audio-waveform';
+export * from './label';
+export * from './switch';
