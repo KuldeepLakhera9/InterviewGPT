@@ -1,0 +1,391 @@
+import type { CompanyPrepPackData } from '../types/career.types';
+
+export function getCompanyPrepPacks(): CompanyPrepPackData[] {
+  return [
+    {
+      id: 'pack-google',
+      companyName: 'Google',
+      logoInitial: 'G',
+      badgeColor: 'bg-blue-600',
+      overview:
+        'Focuses heavily on core data structures, graph algorithms, scale architecture, clean modular code, and Google Leadership Principles.',
+      interviewPattern: [
+        'Round 1: Recruiter Technical Screen (45 mins)',
+        'Round 2: Coding & Algorithms (45 mins)',
+        'Round 3: System Design & Architecture (45 mins)',
+        'Round 4: Googleyness & Leadership Behavioral (45 mins)',
+      ],
+      frequentlyAskedTopics: [
+        'Graph Traversal (BFS/DFS)',
+        'Dynamic Programming',
+        'Sliding Window',
+        'Distributed Caching',
+        'Googleyness',
+      ],
+      skillPriorities: [
+        'Data Structures & Algorithms',
+        'System Design',
+        'Code Elegance',
+        'Communication',
+      ],
+      practiceQuestions: [
+        'Implement Concurrent LRU Cache',
+        'Find Median in Stream of Integers',
+        'Design Google Drive File Sync Engine',
+      ],
+      recommendedProjects: [
+        'High-Throughput Distributed Rate Limiter',
+        'CRDT Document Synchronizer',
+      ],
+      preparationTimelineWeeks: 6,
+    },
+    {
+      id: 'pack-microsoft',
+      companyName: 'Microsoft',
+      logoInitial: 'M',
+      badgeColor: 'bg-sky-500',
+      overview:
+        'Emphasizes clean Object-Oriented Design, C#/TypeScript/Azure cloud services, system maintainability, and collaborative problem solving.',
+      interviewPattern: [
+        'Round 1: Online Assessment (Coding + OOD)',
+        'Round 2: Data Structures & Problem Solving',
+        'Round 3: System Design & Azure Integration',
+        'Round 4: As-One Leadership Behavioral',
+      ],
+      frequentlyAskedTopics: [
+        'Object-Oriented Design',
+        'Trees & Tries',
+        'Azure Cloud Patterns',
+        'API Security',
+      ],
+      skillPriorities: ['OOD & Design Patterns', 'TypeScript / C#', 'System Architecture'],
+      practiceQuestions: [
+        'Design Parking Lot System',
+        'Serialize & Deserialize Binary Tree',
+        'Design Azure Blob Storage Access Gateway',
+      ],
+      recommendedProjects: ['Idempotency Middleware & Saga Orchestrator'],
+      preparationTimelineWeeks: 4,
+    },
+    {
+      id: 'pack-amazon',
+      companyName: 'Amazon',
+      logoInitial: 'A',
+      badgeColor: 'bg-amber-600',
+      overview:
+        'Famous for rigorous evaluation against 16 Leadership Principles (Customer Obsession, Ownership, Bias for Action) paired with medium-to-hard coding & AWS system design.',
+      interviewPattern: [
+        'Round 1: Online Assessment (Coding + Work Simulation)',
+        'Round 2: Coding + LP (45 mins)',
+        'Round 3: Coding + LP (45 mins)',
+        'Round 4: System Design + LP (45 mins)',
+        'Round 5: Bar Raiser Interview (45 mins)',
+      ],
+      frequentlyAskedTopics: [
+        'Amazon 16 Leadership Principles',
+        'Trees & Priority Queues',
+        'DynamoDB & SQS Architecture',
+        'Low-Level Design',
+      ],
+      skillPriorities: ['STAR Behavioral Methodology', 'AWS Ecosystem', 'DSA & LLD'],
+      practiceQuestions: [
+        'Implement Top K Frequent Words',
+        'Design Amazon Shopping Cart & Checkout',
+        'Behavioral: Tell me about a time you took a calculated risk',
+      ],
+      recommendedProjects: ['Distributed Rate Limiter Gateway'],
+      preparationTimelineWeeks: 5,
+    },
+    {
+      id: 'pack-meta',
+      companyName: 'Meta',
+      logoInitial: '∞',
+      badgeColor: 'bg-indigo-600',
+      overview:
+        'Fast-paced technical interviews emphasizing bug-free code speed (2 medium questions in 45 mins), React/GraphQL UI, and large scale system architecture.',
+      interviewPattern: [
+        'Round 1: Technical Screen (2 Coding Problems in 45 mins)',
+        'Round 2: Coding Speed & Accuracy (45 mins)',
+        'Round 3: System Design (Meta scale - 1B+ users)',
+        'Round 4: Behavioral & Culture Fit',
+      ],
+      frequentlyAskedTopics: [
+        'Binary Search & Two Pointers',
+        'Graph BFS/DFS',
+        'GraphQL Federation',
+        'News Feed System Design',
+      ],
+      skillPriorities: ['Coding Speed', 'React / GraphQL', 'Scale Architecture'],
+      practiceQuestions: [
+        'Design Meta News Feed',
+        'Validate Binary Search Tree',
+        'Lowest Common Ancestor of Binary Tree',
+      ],
+      recommendedProjects: ['CRDT Document Synchronizer'],
+      preparationTimelineWeeks: 4,
+    },
+    {
+      id: 'pack-apple',
+      companyName: 'Apple',
+      logoInitial: '',
+      badgeColor: 'bg-slate-700',
+      overview:
+        'Team-specific interviews prioritizing deep domain knowledge, memory safety, hardware/software interfaces, elegant APIs, and attention to detail.',
+      interviewPattern: [
+        'Round 1: Recruiter Phone Screen',
+        'Round 2: Technical Phone Screen',
+        'Round 3: Onsite Loop (4-5 Domain Specific Technical Rounds)',
+      ],
+      frequentlyAskedTopics: [
+        'Memory Optimization',
+        'Swift / C++ / TypeScript',
+        'Concurrency',
+        'Low-Level Architecture',
+      ],
+      skillPriorities: ['Low-Level Performance', 'Domain Mastery', 'API Design'],
+      practiceQuestions: [
+        'Implement Thread-Safe Ring Buffer',
+        'Design iCloud Photo Backup Engine',
+        'Optimize Memory Usage of Large Array',
+      ],
+      recommendedProjects: ['High-Throughput Telemetry Gateway'],
+      preparationTimelineWeeks: 5,
+    },
+    {
+      id: 'pack-netflix',
+      companyName: 'Netflix',
+      logoInitial: 'N',
+      badgeColor: 'bg-rose-600',
+      overview:
+        'High bar for senior engineers. Tests culture fit (Freedom & Responsibility), microservice fault tolerance, video streaming protocols, and resilience engineering.',
+      interviewPattern: [
+        'Round 1: Recruiter Screen',
+        'Round 2: Deep Technical & System Design (60 mins)',
+        'Round 3: Onsite Loop (System Architecture, Culture, Leadership)',
+      ],
+      frequentlyAskedTopics: [
+        'Chaos Engineering',
+        'CDN Architecture',
+        'Resilience Patterns (Circuit Breaker)',
+        'Netflix Culture Memo',
+      ],
+      skillPriorities: ['System Design', 'Microservice Resilience', 'Senior Leadership'],
+      practiceQuestions: [
+        'Design Netflix Video Recommendation Engine',
+        'Implement Circuit Breaker Pattern',
+        'Design Multi-Region CDN Failover',
+      ],
+      recommendedProjects: ['High-Throughput Telemetry Gateway'],
+      preparationTimelineWeeks: 6,
+    },
+    {
+      id: 'pack-uber',
+      companyName: 'Uber',
+      logoInitial: 'U',
+      badgeColor: 'bg-black',
+      overview:
+        'Geospatial indexing (H3 hexes), real-time dispatch matching algorithms, high concurrency, and distributed transactions under network partitions.',
+      interviewPattern: [
+        'Round 1: Coding Screen',
+        'Round 2: Data Structures & Algorithms',
+        'Round 3: System Design (Uber Ride Matching)',
+        'Round 4: Architecture & Low-Level Design',
+      ],
+      frequentlyAskedTopics: [
+        'Geospatial Indexing (H3 / Quadtree)',
+        'Real-Time WebSockets',
+        'Matchmaking Algorithms',
+        'Distributed Lock',
+      ],
+      skillPriorities: ['Geospatial Systems', 'Real-Time Concurrency', 'DSA'],
+      practiceQuestions: [
+        'Design Uber Ride Dispatching Engine',
+        'Implement Quadtree for Spatial Points',
+        'Find K Closest Drivers',
+      ],
+      recommendedProjects: ['Optimistic State Synchronizer'],
+      preparationTimelineWeeks: 5,
+    },
+    {
+      id: 'pack-adobe',
+      companyName: 'Adobe',
+      logoInitial: 'A',
+      badgeColor: 'bg-red-600',
+      overview:
+        'Focuses on Creative Cloud SaaS APIs, graphics rendering pipelines, document processing algorithms, and robust full stack web development.',
+      interviewPattern: [
+        'Round 1: Online Coding Test',
+        'Round 2: Technical Interview (DSA + Web Technologies)',
+        'Round 3: System Design & Cloud Services',
+        'Round 4: HR & Cultural Alignment',
+      ],
+      frequentlyAskedTopics: [
+        'Canvas 2D / WebGL Rendering',
+        'DSA & Matrix Manipulation',
+        'REST & GraphQL API Design',
+      ],
+      skillPriorities: ['Web Performance', 'TypeScript & Web APIs', 'DSA'],
+      practiceQuestions: [
+        'Implement Canvas Draw Engine',
+        'Matrix Rotation & Image Filter Algorithms',
+        'Design Document Versioning API',
+      ],
+      recommendedProjects: ['CRDT Document Synchronizer'],
+      preparationTimelineWeeks: 4,
+    },
+    {
+      id: 'pack-atlassian',
+      companyName: 'Atlassian',
+      logoInitial: 'A',
+      badgeColor: 'bg-blue-500',
+      overview:
+        'Values collaborative code design (Craft round), Jira/Confluence ecosystem APIs, system design, and strong alignment with Atlassian values.',
+      interviewPattern: [
+        'Round 1: Recruiter Screen',
+        'Round 2: Coding & Code Pair (Craft Round)',
+        'Round 3: System Design (Confluence/Jira Scale)',
+        'Round 4: Values & Leadership Round',
+      ],
+      frequentlyAskedTopics: [
+        'Code Refactoring',
+        'Collaborative Editing Architecture',
+        'Atlassian Core Values',
+      ],
+      skillPriorities: ['Code Quality & Craftsmanship', 'System Design', 'Values'],
+      practiceQuestions: [
+        'Refactor Legacy Codebase in Live Pair',
+        'Design Confluence Real-Time Editor',
+        'Design Jira Issue Workflow Engine',
+      ],
+      recommendedProjects: ['CRDT Document Synchronizer'],
+      preparationTimelineWeeks: 4,
+    },
+    {
+      id: 'pack-goldmansachs',
+      companyName: 'Goldman Sachs',
+      logoInitial: 'GS',
+      badgeColor: 'bg-sky-700',
+      overview:
+        'High focus on mathematical problem solving, low-latency financial systems, multithreading, C++/Java internals, and data structures.',
+      interviewPattern: [
+        'Round 1: HackerRank Coding & Math Test',
+        'Round 2: Technical Interview 1 (DSA & Multithreading)',
+        'Round 3: Technical Interview 2 (System Design & DBs)',
+        'Round 4: Executive Fit Round',
+      ],
+      frequentlyAskedTopics: [
+        'Multithreading & Concurrency',
+        'Financial Math & Probability',
+        'Database Optimization',
+      ],
+      skillPriorities: ['Low Latency Systems', 'Multithreading', 'Algorithms'],
+      practiceQuestions: [
+        'Design High-Frequency Trading Order Book',
+        'Implement Lock-Free Queue',
+        'Find Subarray with Target Product',
+      ],
+      recommendedProjects: ['Idempotency Middleware & Saga Orchestrator'],
+      preparationTimelineWeeks: 5,
+    },
+    {
+      id: 'pack-tcs',
+      companyName: 'TCS',
+      logoInitial: 'TCS',
+      badgeColor: 'bg-purple-700',
+      overview:
+        'TCS Digital / Prime track tests fundamental data structures, SQL queries, web development fundamentals, and logical reasoning.',
+      interviewPattern: [
+        'Round 1: TCS NQT / Digital Online Test (Aptitude + Coding)',
+        'Round 2: Technical Interview (DSA + Web + DBMS)',
+        'Round 3: HR Interview',
+      ],
+      frequentlyAskedTopics: [
+        'SQL Joins & Indexing',
+        'Core Java / JavaScript',
+        'DSA Basics (Array, String, Linked List)',
+      ],
+      skillPriorities: ['Core Programming', 'SQL DBMS', 'Communication'],
+      practiceQuestions: [
+        'Reverse Words in String',
+        'Find Second Highest Salary SQL Query',
+        'Check Balanced Parentheses',
+      ],
+      recommendedProjects: ['Idempotency Middleware'],
+      preparationTimelineWeeks: 3,
+    },
+    {
+      id: 'pack-infosys',
+      companyName: 'Infosys',
+      logoInitial: 'INFY',
+      badgeColor: 'bg-blue-800',
+      overview:
+        'Infosys Power Programmer / Specialist Programmer track evaluates algorithmic proficiency, dynamic programming, and clean code.',
+      interviewPattern: [
+        'Round 1: HackWithInfy / Infytq Coding Test',
+        'Round 2: Technical Interview (Coding + Projects)',
+        'Round 3: HR Round',
+      ],
+      frequentlyAskedTopics: [
+        'Arrays & Strings',
+        'Recursion & Backtracking',
+        'Object Oriented Programming',
+      ],
+      skillPriorities: ['DSA Fundamentals', 'OOP Principles', 'Problem Solving'],
+      practiceQuestions: [
+        'Longest Palindromic Substring',
+        'Implement Stack using Queues',
+        'SQL Query for Duplicate Records',
+      ],
+      recommendedProjects: ['Idempotency Middleware'],
+      preparationTimelineWeeks: 3,
+    },
+    {
+      id: 'pack-accenture',
+      companyName: 'Accenture',
+      logoInitial: 'ACN',
+      badgeColor: 'bg-purple-600',
+      overview:
+        'Assesses full stack web development, cloud technology fundamentals (AWS/Azure), agile methodology, and client communication skills.',
+      interviewPattern: [
+        'Round 1: Cognitive & Technical Assessment',
+        'Round 2: Coding Assessment',
+        'Round 3: Technical & HR Interview',
+      ],
+      frequentlyAskedTopics: ['HTML/CSS/JS Core', 'React / Angular Basics', 'Cloud Fundamentals'],
+      skillPriorities: ['Full Stack Basics', 'Agile Principles', 'Communication'],
+      practiceQuestions: [
+        'Create Responsive Form in React',
+        'Explain RESTful API Constraints',
+        'SQL Inner vs Outer Join',
+      ],
+      recommendedProjects: ['Idempotency Middleware'],
+      preparationTimelineWeeks: 3,
+    },
+    {
+      id: 'pack-cognizant',
+      companyName: 'Cognizant',
+      logoInitial: 'CTS',
+      badgeColor: 'bg-cyan-700',
+      overview:
+        'GenC Next / Developer track evaluates object-oriented programming, data structures, SQL optimization, and web application architecture.',
+      interviewPattern: [
+        'Round 1: GenC Next Skill Assessment',
+        'Round 2: Technical Interview',
+        'Round 3: HR & Management Interview',
+      ],
+      frequentlyAskedTopics: [
+        'Java / C# OOP',
+        'Database Normalization',
+        'Data Structures (Trees/Queues)',
+      ],
+      skillPriorities: ['OOP Concepts', 'DBMS SQL', 'Problem Solving'],
+      practiceQuestions: [
+        'Implement Binary Tree Level Order Traversal',
+        'SQL Group By & Having Clause',
+        'Check Anagram Strings',
+      ],
+      recommendedProjects: ['Idempotency Middleware'],
+      preparationTimelineWeeks: 3,
+    },
+  ];
+}

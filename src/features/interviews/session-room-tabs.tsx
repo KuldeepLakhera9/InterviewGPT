@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { MessageSquare, FileText, Film, Award, Loader2 } from 'lucide-react';
+import { MessageSquare, FileText, Film, Award, Loader2, Video } from 'lucide-react';
 import { InterviewConversationRoom } from './conversation-engine/components/interview-conversation-room';
 import { TranscriptViewer } from './transcript-system/components/transcript-viewer';
 import { SessionReplayPlayer } from './transcript-system/components/session-replay-player';
@@ -12,6 +12,7 @@ import {
   CandidateIntelligenceReportView,
   type CandidateIntelligenceReportData,
 } from '../evaluation';
+import { MultimodalDashboard } from '../multimodal';
 import { cn } from '@/lib/utils';
 
 interface SessionRoomTabsProps {
@@ -20,9 +21,9 @@ interface SessionRoomTabsProps {
 }
 
 export function SessionRoomTabs({ sessionId, initialTranscript }: SessionRoomTabsProps) {
-  const [activeTab, setActiveTab] = React.useState<'room' | 'transcript' | 'replay' | 'evaluation'>(
-    'room'
-  );
+  const [activeTab, setActiveTab] = React.useState<
+    'room' | 'multimodal' | 'transcript' | 'replay' | 'evaluation'
+  >('multimodal');
   const [transcript, setTranscript] = React.useState<InterviewTranscriptData | null>(
     initialTranscript || null
   );
@@ -59,7 +60,7 @@ export function SessionRoomTabs({ sessionId, initialTranscript }: SessionRoomTab
     }
   }, [sessionId]);
 
-  const handleTabChange = (tab: 'room' | 'transcript' | 'replay' | 'evaluation') => {
+  const handleTabChange = (tab: 'room' | 'multimodal' | 'transcript' | 'replay' | 'evaluation') => {
     setActiveTab(tab);
     if ((tab === 'transcript' || tab === 'replay') && !transcript) {
       fetchTranscriptData();
@@ -75,6 +76,20 @@ export function SessionRoomTabs({ sessionId, initialTranscript }: SessionRoomTab
       <div className="flex items-center space-x-1 overflow-x-auto border-b border-[var(--border-subtle)] pb-2 text-xs">
         <button
           type="button"
+          onClick={() => handleTabChange('multimodal')}
+          className={cn(
+            'flex items-center space-x-1.5 rounded-lg px-3 py-1.5 font-semibold transition-all',
+            activeTab === 'multimodal'
+              ? 'bg-purple-600 text-white shadow-sm ring-1 ring-purple-400'
+              : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
+          )}
+        >
+          <Video className="h-3.5 w-3.5" />
+          <span>Multimodal Video Room</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => handleTabChange('room')}
           className={cn(
             'flex items-center space-x-1.5 rounded-lg px-3 py-1.5 font-semibold transition-all',
@@ -84,7 +99,7 @@ export function SessionRoomTabs({ sessionId, initialTranscript }: SessionRoomTab
           )}
         >
           <MessageSquare className="h-3.5 w-3.5" />
-          <span>Live Conversation Room</span>
+          <span>Text Chat Room</span>
         </button>
 
         <button
@@ -131,6 +146,8 @@ export function SessionRoomTabs({ sessionId, initialTranscript }: SessionRoomTab
       </div>
 
       {/* Tab Panels */}
+      {activeTab === 'multimodal' && <MultimodalDashboard sessionId={sessionId} />}
+
       {activeTab === 'room' && <InterviewConversationRoom sessionId={sessionId} />}
 
       {activeTab === 'transcript' && (

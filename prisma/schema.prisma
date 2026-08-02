@@ -56,6 +56,13 @@ model User {
   interviewPresets InterviewPreset[]
   questionBankItems QuestionBankItem[]
   evaluationReports EvaluationReport[]
+  careerGoals CareerGoal[]
+  skillGraph CandidateSkillGraph?
+  roadmaps PersonalizedRoadmap[]
+  learningItems LearningHubItem[]
+  dailyStreak DailyCoachStreak?
+  gamification GamificationProfile?
+  notifications AppNotification[]
 
   @@index([workspaceId, email])
   @@index([deletedAt])
@@ -265,6 +272,7 @@ model InterviewSession {
   resume Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   turns InterviewTurn[]
   evaluation EvaluationReport?
+  multimodalData MultimodalSessionData?
 
   @@index([userId, status])
   @@index([workspaceId])
@@ -385,4 +393,138 @@ model EvaluationReport {
   @@index([userId])
   @@index([workspaceId])
   @@map("evaluation_reports")
+}
+
+model MultimodalSessionData {
+  id                String   @id @default(uuid())
+  sessionId         String   @unique @map("session_id")
+  interviewMode     String   @default("practice") @map("interview_mode")
+  speechAnalytics   Json     @default("{}") @map("speech_analytics")
+  presenceMetrics   Json     @default("{}") @map("presence_metrics")
+  codingWorkspace   Json     @default("{}") @map("coding_workspace")
+  whiteboardData    Json     @default("{}") @map("whiteboard_data")
+  recordingMetadata Json     @default("{}") @map("recording_metadata")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("multimodal_session_data")
+}
+
+model CareerGoal {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  dreamCompany      String   @map("dream_company")
+  targetRole        String   @map("target_role")
+  experienceLevel   String   @map("experience_level")
+  salaryGoal        String?  @map("salary_goal")
+  preferredIndustry String?  @map("preferred_industry")
+  preferredLocation String?  @map("preferred_location")
+  targetTimeline    String   @map("target_timeline")
+  isPrimary         Boolean  @default(true) @map("is_primary")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isPrimary])
+  @@map("career_goals")
+}
+
+model CandidateSkillGraph {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  skillsData   Json     @default("[]") @map("skills_data")
+  overallScore Int      @default(70) @map("overall_score")
+  lastUpdated  DateTime @default(now()) @map("last_updated")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("candidate_skill_graphs")
+}
+
+model PersonalizedRoadmap {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  title            String
+  targetRole       String   @map("target_role")
+  dailyPlan        Json     @default("[]") @map("daily_plan")
+  weeklyPlan       Json     @default("[]") @map("weekly_plan")
+  monthlyPlan      Json     @default("[]") @map("monthly_plan")
+  quarterlyPlan    Json     @default("[]") @map("quarterly_plan")
+  completionStatus Int      @default(0) @map("completion_status")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("personalized_roadmaps")
+}
+
+model LearningHubItem {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  type       String   // note | resource | flashcard | quiz | practice_set
+  title      String
+  category   String
+  content    Json
+  isBookmarked Boolean @default(false) @map("is_bookmarked")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("learning_hub_items")
+}
+
+model DailyCoachStreak {
+  id              String    @id @default(uuid())
+  userId          String    @unique @map("user_id")
+  currentStreak   Int       @default(1) @map("current_streak")
+  longestStreak   Int       @default(1) @map("longest_streak")
+  lastActiveDate  String    @map("last_active_date")
+  dailyTasks      Json      @default("[]") @map("daily_tasks")
+  completedTasks  Json      @default("[]") @map("completed_tasks")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("daily_coach_streaks")
+}
+
+model GamificationProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  currentXp     Int      @default(250) @map("current_xp")
+  currentLevel  Int      @default(2) @map("current_level")
+  unlockedBadges Json    @default("[]") @map("unlocked_badges")
+  milestones    Json     @default("[]")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("gamification_profiles")
+}
+
+model AppNotification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String   // daily_learning | practice | resume | interview | goal
+  title     String
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  actionUrl String?  @map("action_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("app_notifications")
 }
